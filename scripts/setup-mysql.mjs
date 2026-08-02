@@ -3,9 +3,10 @@
  * Creates the JobPulse schema in the configured MySQL database and,
  * optionally, seeds an admin user.
  *
- * Usage (loads credentials from .env):
- *   node --env-file=.env scripts/setup-mysql.mjs
- *   node --env-file=.env scripts/setup-mysql.mjs --admin you@example.com --password 'SomePass123'
+ * Credentials come from .env.local then .env (same order as the other
+ * maintenance scripts), so no --env-file flag is needed:
+ *   node scripts/setup-mysql.mjs
+ *   node scripts/setup-mysql.mjs --admin you@example.com --password 'SomePass123'
  */
 
 import { readFile } from "node:fs/promises";
@@ -13,6 +14,9 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import mysql from "mysql2/promise";
 import bcrypt from "bcryptjs";
+import { loadEnvFiles } from "./lib/mysql-client.mjs";
+
+loadEnvFiles([".env.local", ".env"]);
 
 function parseArgs(argv) {
   const args = {};

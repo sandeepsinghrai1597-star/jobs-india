@@ -4,10 +4,11 @@ The app now runs on **Hostinger MySQL** instead of Supabase. Auth, sessions,
 password reset, resume file storage, and job ingestion are all backed by your
 own database.
 
-> **Important:** a Hostinger *web hosting* plan can host the database, email,
-> and domain — but it cannot run a Next.js server. The site itself must stay on
-> a Node host (Vercel is already connected and free). Your Hostinger domain can
-> point at it, so visitors only ever see your domain.
+> **Note:** the site now runs on Hostinger itself, not Vercel. A plan with
+> Node.js support serves the Next.js app directly — responses carry
+> `platform: hostinger` alongside the usual `x-nextjs-cache` headers. A
+> database-only *web hosting* plan cannot do this; on those you still need a
+> separate Node host and point the domain at it.
 
 ---
 
@@ -88,12 +89,9 @@ everything else still works.
 
 ## 5. Deploy
 
-Push the same variables to the host running the site:
-
-```bash
-npx vercel env add MYSQL_HOST production      # repeat per variable
-npx vercel --prod
-```
+Set the same variables on the host running the site — hPanel → **Websites →
+your site → Node.js → Environment variables** (or Vercel's project settings if
+you host there instead).
 
 Variables needed in production: all `MYSQL_*`, `AUTH_JWT_SECRET`, all `SMTP_*`,
 plus the existing `CRON_SECRET`, `GOOGLE_GENERATIVE_AI_API_KEY`, Razorpay keys,
@@ -101,6 +99,12 @@ and `NEXT_PUBLIC_SITE_URL`.
 
 The old `NEXT_PUBLIC_SUPABASE_*` and `SUPABASE_SERVICE_ROLE_KEY` variables are
 no longer read and can be deleted.
+
+> **`NEXT_PUBLIC_SITE_URL` is baked in at build time**, not read at runtime —
+> it is inlined into every canonical tag, `og:url`, JSON-LD block, and
+> `sitemap.xml` entry when the bundle is compiled. Changing it in hPanel does
+> nothing until you **rebuild**. If canonicals point at the wrong origin, that
+> is always this variable.
 
 ---
 
@@ -113,7 +117,82 @@ hPanel → **Domains → DNS Zone**, then either:
 - follow the exact records Vercel shows under Project → Settings → Domains
   after you add your domain there.
 
-Then set `NEXT_PUBLIC_SITE_URL=https://yourdomain.com` and redeploy.
+Then set `NEXT_PUBLIC_SITE_URL=https://yourdomain.com` and rebuild.
+
+---
+
+## 6a. Delete Hostinger's default `robots.txt` (blocks Google)
+
+Hostinger drops a static `robots.txt` into the document root of
+`*.hostingersite.com` preview domains so temporary URLs never get indexed. It
+contains:
+
+```
+User-agent: Googlebot
+Disallow: /
+
+User-agent: *
+Allow: /
+```
+
+That file is served by the edge **before the request ever reaches Next.js**, so
+it silently overrides [`src/app/robots.ts`](../src/app/robots.ts). Adding a
+`public/robots.txt` will not help — it gets shadowed the same way.
+
+How to tell which one you are getting: every route Next serves picks up the
+security headers from `next.config.ts`. Compare them.
+
+```bash
+curl -sI https://yourdomain.com/robots.txt | grep -i "x-frame-options"
+```
+
+- **No output** → the static Hostinger file is winning. Delete it.
+- **`X-Frame-Options: DENY`** → Next is serving it correctly.
+
+Remove it via hPanel → **Files → File Manager** → document root → delete
+`robots.txt` (or `rm ~/public_html/robots.txt` over SSH). Re-run the curl check
+above to confirm.
+
+Leave this in place and Google will never crawl the site, no matter what the
+sitemap or canonical tags say.
+
+---
+
+## 6b. Optional: a staging database for end-to-end testing
+
+The Playwright suite creates users and creates/approves/rejects jobs, so it must
+never point at the live database. Give it its own:
+
+1. hPanel → **Databases → MySQL Databases** → create `..._staging` with its own
+   user and a **fresh password** (do not reuse the production one).
+2. hPanel → **Databases → Remote MySQL** → add the IP you will run tests from.
+   Hostinger blocks outside connections by default.
+3. Create `.env.local` in the project root — it is git-ignored and takes
+   precedence over `.env`:
+
+```bash
+MYSQL_HOST=<staging host>
+MYSQL_PORT=3306
+MYSQL_DATABASE=<staging db>
+MYSQL_USER=<staging user>
+MYSQL_PASSWORD=<staging password>
+AUTH_JWT_SECRET=<node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+4. Create the schema, seed fixtures, and run the whole suite:
+
+```bash
+npm run verify:panels
+```
+
+That chains `db:setup` (applies `db/mysql/schema.sql`), `setup:e2e` (seeds admin,
+candidate, and employer users), and `playwright test` — covering admin job
+approve/reject/feature, the candidate journey, employer onboarding and
+applicants, and cross-tenant security boundaries.
+
+Once that passes, copy the **same variable names** (with production values) into
+hPanel → Node.js → Environment variables and rebuild.
 
 ---
 
@@ -130,10 +209,59 @@ npm run dev
 - Add a job source in `/admin/jobs/sources` (status **active**,
   auto-fetch **on**) so the twice-daily cron has something to fetch.
 
+Health check — the single fastest way to confirm the deployment is wired up:
+
+```bash
+curl -s https://yourdomain.com/api/health
+```
+
+`200` with `"status":"healthy"` means the app reached the database. `503` with
+`"failing":["database"]` means the `MYSQL_*` variables are missing or wrong on
+the host. **This failure is easy to miss from the browser**: job pages fall back
+to a bundled JSON snapshot and keep rendering normally, while signup, login,
+admin, and ingestion are all dead.
+
 Cron check:
 
 ```bash
 curl -H "Authorization: Bearer $CRON_SECRET" https://yourdomain.com/api/cron/fetch-jobs
+```
+
+---
+
+## 7a. Schedule the cron jobs (Hostinger does not read `vercel.json`)
+
+`vercel.json` crons are a **Vercel-only** feature. On Hostinger nothing calls
+the `/api/cron/*` endpoints, so job listings never refresh and expired listings
+are never swept — the board silently goes stale.
+
+hPanel → **Advanced → Cron Jobs**, add three entries pointing at
+[`scripts/run-cron.sh`](./run-cron.sh):
+
+| Schedule | Command |
+|---|---|
+| `0 3 * * *` | `/bin/sh /home/USER/app/scripts/run-cron.sh fetch-jobs` |
+| `30 12 * * *` | `/bin/sh /home/USER/app/scripts/run-cron.sh fetch-jobs` |
+| `0 1 * * *` | `/bin/sh /home/USER/app/scripts/run-cron.sh expire-jobs` |
+
+Replace `/home/USER/app` with the real deployment path. The script needs
+`SITE_URL` and `CRON_SECRET` in its environment; if hPanel cron entries do not
+inherit the Node.js environment variables, prefix them inline:
+
+```
+0 3 * * * SITE_URL=https://yourdomain.com CRON_SECRET=xxx /bin/sh /home/USER/app/scripts/run-cron.sh fetch-jobs
+```
+
+Confirm it ran by checking that `last_fetched_at` advanced in
+`/admin/jobs/sources`.
+
+SEO check — run against the **live** site after every rebuild. Both must show
+your real origin, never `vercel.app` or `localhost`:
+
+```bash
+curl -s https://yourdomain.com/ | grep -o '<link rel="canonical"[^>]*>'
+curl -s https://yourdomain.com/sitemap.xml | grep -o '<loc>[^<]*</loc>' | head -3
+curl -sI https://yourdomain.com/robots.txt | grep -i x-frame-options   # must print
 ```
 
 ---

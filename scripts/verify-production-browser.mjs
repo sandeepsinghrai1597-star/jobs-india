@@ -3,7 +3,8 @@ import { chromium } from "playwright";
 const [
   ,
   ,
-  baseUrl = "https://jobpulse-india.vercel.app",
+  baseUrl = process.env.NEXT_PUBLIC_SITE_URL ??
+    "https://lightgrey-goldfinch-471212.hostingersite.com",
   adminEmail,
   adminPassword,
   candidateEmail,

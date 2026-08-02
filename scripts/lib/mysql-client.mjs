@@ -12,6 +12,20 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import mysql from "mysql2/promise";
 
+/**
+ * Parses .env files the same way Next.js (dotenv) does.
+ *
+ * This must stay in sync with dotenv or the app and these scripts silently use
+ * different credentials. The case that bit us: dotenv matches unquoted values
+ * with `[^#\r\n]+`, so a password containing `#` is truncated at that character,
+ * while a naive split on the first `=` keeps it whole. The scripts connected and
+ * the Next.js server got "Access denied" from the same file.
+ *
+ * Rules mirrored from dotenv:
+ *   - surrounding single/double/backtick quotes are stripped
+ *   - inside quotes, `#` is literal
+ *   - outside quotes, `#` begins a comment
+ */
 export function loadEnvFiles(files = [".env.local", ".env"]) {
   for (const file of files) {
     const envPath = path.join(process.cwd(), file);
@@ -22,8 +36,20 @@ export function loadEnvFiles(files = [".env.local", ".env"]) {
       if (!line || line.startsWith("#")) continue;
       const eqIndex = line.indexOf("=");
       if (eqIndex === -1) continue;
+
       const key = line.slice(0, eqIndex).trim();
-      const value = line.slice(eqIndex + 1).trim();
+      let value = line.slice(eqIndex + 1).trim();
+
+      const quote = value[0];
+      if (quote === '"' || quote === "'" || quote === "`") {
+        const closingIndex = value.indexOf(quote, 1);
+        value = closingIndex > 0 ? value.slice(1, closingIndex) : value.slice(1);
+      } else {
+        const commentIndex = value.indexOf("#");
+        if (commentIndex !== -1) value = value.slice(0, commentIndex);
+        value = value.trim();
+      }
+
       if (!(key in process.env)) process.env[key] = value;
     }
   }
