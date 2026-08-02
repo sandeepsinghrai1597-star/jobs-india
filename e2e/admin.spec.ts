@@ -25,7 +25,10 @@ test.describe("Admin flows", () => {
     });
     await approveCard.getByRole("button", { name: /^approve$/i }).first().click();
     await page.goto(`/jobs?keyword=${encodeURIComponent(approveTitle)}`);
-    await expect(page.getByText(approveTitle)).toBeVisible();
+    // Match the result link specifically: the search page also echoes the term
+    // in a "Keyword: ..." badge, so a plain text match is ambiguous and would
+    // pass even when no job is listed.
+    await expect(page.getByRole("link", { name: approveTitle })).toBeVisible();
 
     await page.goto(`/admin/jobs/review?tab=pending&q=${encodeURIComponent(rejectTitle)}`);
     const rejectCard = page.locator("div,article").filter({
@@ -33,7 +36,9 @@ test.describe("Admin flows", () => {
     });
     await rejectCard.getByRole("button", { name: /^reject$/i }).first().click();
     await page.goto(`/jobs?keyword=${encodeURIComponent(rejectTitle)}`);
-    await expect(page.getByText(rejectTitle)).toHaveCount(0);
+    // Same reason as above — the keyword badge always contains the title, so
+    // this must assert on the absence of a result link, not of the text.
+    await expect(page.getByRole("link", { name: rejectTitle })).toHaveCount(0);
 
     await page.goto(`/admin/jobs/review?tab=active&q=${encodeURIComponent(approveTitle)}`);
     const featureCard = page.locator("div,article").filter({

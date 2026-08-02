@@ -14,6 +14,9 @@
     "cleanup:corrupted-jobs": "node --env-file=.env scripts/fix-corrupted-jobs.mjs",
     "seed:jobs": "node scripts/seed-jobs.mjs",
     "setup:e2e": "node scripts/setup-e2e.mjs",
+    "db:setup": "node scripts/setup-mysql.mjs",
+    "db:migrate": "node scripts/apply-migrations.mjs",
+    "verify:panels": "npm run db:setup && npm run db:migrate && npm run seed:jobs && npm run setup:e2e && playwright test",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed"
   },

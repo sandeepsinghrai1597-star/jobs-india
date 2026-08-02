@@ -29,11 +29,18 @@ export function getFixtures(): Fixtures {
 }
 
 export async function login(page: Page, email: string, password: string) {
+  // Drop any existing session first. /login redirects authenticated users to
+  // their role home, so signing in as a second user mid-spec (e.g. right after
+  // a signup) would never reach the form.
+  await page.context().clearCookies();
   await page.goto("/login");
   await expect(page.getByRole("heading", { name: /login to jobpulse india/i })).toBeVisible();
   await page.getByLabel("Email Address").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: /sign in/i }).click();
+  // Wait for the post-login redirect to land. Without this, a caller that
+  // immediately navigates can race the sign-in and get bounced back to /login.
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30_000 });
 }
 
 export async function logout(page: Page) {
@@ -59,7 +66,11 @@ export async function fillCandidateOnboarding(page: Page) {
     "Experienced in end-to-end web testing and regression coverage.",
   );
   await page.getByRole("button", { name: /save profile/i }).click();
-  await expect(page.getByText(/profile updated|candidate profile saved successfully/i)).toBeVisible();
+  // The success alert renders a title and a description that both match, so
+  // scope to the first hit rather than tripping strict mode.
+  await expect(
+    page.getByText(/profile updated|candidate profile saved successfully/i).first(),
+  ).toBeVisible();
 }
 
 export async function fillEmployerOnboarding(page: Page) {
@@ -86,7 +97,10 @@ export async function createEmployerJob(page: Page, title: string) {
   await page.getByLabel("Experience required").fill("2 years");
   await page.getByLabel("Industry").fill("Software");
   await page.getByLabel("Skills").fill("QA\nPlaywright\nRegression");
-  await page.getByLabel("Description").fill("QA role created from Playwright automation.");
+  // Must clear the 50-character minimum the job form enforces.
+  await page
+    .getByLabel("Description")
+    .fill("QA role created from Playwright automation to exercise the employer posting flow end to end.");
   await page.getByLabel("Responsibilities").fill("Write tests\nReview regressions");
   await page.getByLabel("Requirements").fill("Automation experience\nCommunication");
   await page.getByLabel("Openings").fill("2");
@@ -102,7 +116,11 @@ export async function createAdminJob(page: Page, title: string, companyName: str
   await page.goto("/admin/jobs/new");
   await page.getByLabel("Company name").fill(companyName);
   await page.getByLabel("Job title").fill(title);
-  await page.getByLabel("Description").fill("Admin-created QA listing for automated moderation testing.");
+  // exact: the admin form also has a "Company description" field, so a loose
+  // label match resolves to two textareas and trips strict mode.
+  await page
+    .getByLabel("Description", { exact: true })
+    .fill("Admin-created QA listing for automated moderation testing.");
   await page.getByLabel("Responsibilities").fill("Moderate jobs\nReview listings");
   await page.getByLabel("Requirements").fill("Admin permissions\nAttention to detail");
   await page.getByLabel("Skills").fill("Admin\nQA\nModeration");
@@ -115,7 +133,9 @@ export async function createAdminJob(page: Page, title: string, companyName: str
   await page.getByLabel("Deadline").fill("2026-12-31");
   await page.getByLabel("Apply URL").fill("https://example.com/admin-created-job");
   await page.getByRole("button", { name: /create pending job/i }).click();
-  await expect(page).toHaveURL(/\/admin\/jobs\/review/);
+  // createJobAction redirects to the pending queue on the admin dashboard
+  // (actions.ts), not to /admin/jobs/review as this previously expected.
+  await expect(page).toHaveURL(/\/admin\?section=jobs&status=pending/);
 }
 
 export async function searchJob(page: Page, keyword: string) {

@@ -33,8 +33,14 @@ test.describe("Candidate flows", () => {
 
     const publicJob = await firstPublicJob(page);
     await page.goto("/jobs");
-    await page.getByRole("button", { name: /^save$/i }).first().click();
-    await expect(page.getByRole("button", { name: /^saved$/i }).first()).toBeVisible();
+    // Job cards start with isSignedIn=false and learn the real session from a
+    // client-side personalization fetch. Clicking before that settles routes to
+    // /login, which bounces an authenticated user to their dashboard.
+    await page.waitForLoadState("networkidle");
+    // Compact save buttons set an aria-label ("Save job" / "Unsave job") which
+    // overrides the visible "Save" / "Saved" text for accessible-name matching.
+    await page.getByRole("button", { name: /^save job$/i }).first().click();
+    await expect(page.getByRole("button", { name: /^unsave job$/i }).first()).toBeVisible();
 
     await page.goto(publicJob.href);
     await page.getByRole("button", { name: /apply now/i }).click();
