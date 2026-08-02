@@ -218,6 +218,17 @@ function extractLabeledValue(text, labels) {
   return null;
 }
 
+/**
+ * Some upstream posts contain hrefs with two URLs pasted together
+ * (".../UPSC_Enhttps://jobpulse.in/...pdfforcement.pdf"). They parse as valid
+ * URLs but resolve to nothing, so drop anything with a second scheme in it.
+ */
+function isSaneUrl(href) {
+  if (!href || href.length > 600) return false;
+  if (!/^https?:\/\//i.test(href)) return false;
+  return (href.match(/https?:\/\//gi) ?? []).length === 1;
+}
+
 function extractLinks(html, baseUrl) {
   return Array.from(
     String(html ?? "").matchAll(/<a\b[^>]*href=(?:"([^"]+)"|'([^']+)'|([^\s>]+))[^>]*>([\s\S]*?)<\/a>/gi),
@@ -226,7 +237,7 @@ function extractLinks(html, baseUrl) {
       try {
         const href = new URL(match[1] ?? match[2] ?? match[3] ?? "", baseUrl).toString();
         const text = stripHtml(match[4] ?? "");
-        return href ? { href, text } : null;
+        return isSaneUrl(href) ? { href, text } : null;
       } catch {
         return null;
       }
@@ -287,6 +298,19 @@ function findSectionIndex(sections, aliases) {
   return sections.findIndex((section) => aliases.some((alias) => matchesHeadingAlias(section.heading, alias)));
 }
 
+function sectionBullets(section) {
+  const bullets = [
+    ...Array.from(section.contentHtml.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)).map((match) => stripHtml(match[1] ?? "")),
+    ...splitLines(section.contentText)
+      .filter((line) => !line.startsWith(section.heading))
+      .slice(0, 12),
+  ]
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(bullets));
+}
+
 function collectChildSections(sections, aliases) {
   const index = findSectionIndex(sections, aliases);
   if (index < 0) {
@@ -302,21 +326,21 @@ function collectChildSections(sections, aliases) {
       break;
     }
 
-    const bullets = [
-      ...Array.from(section.contentHtml.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)).map((match) => stripHtml(match[1] ?? "")),
-      ...splitLines(section.contentText)
-        .filter((line) => !line.startsWith(section.heading))
-        .slice(0, 12),
-    ]
-      .map((line) => line.trim())
-      .filter(Boolean);
-
-    const uniqueBullets = Array.from(new Set(bullets));
+    const uniqueBullets = sectionBullets(section);
     if (uniqueBullets.length > 0) {
       items.push({
         title: section.heading,
         bullets: uniqueBullets,
       });
+    }
+  }
+
+  // Most source posts put the list directly under the heading with no
+  // sub-headings at all. Without this fallback those sections import empty.
+  if (items.length === 0) {
+    const ownBullets = sectionBullets(parent);
+    if (ownBullets.length > 0) {
+      return [{ title: parent.heading, bullets: ownBullets.slice(0, 12) }];
     }
   }
 
@@ -330,6 +354,45 @@ function extractSectionRowsByAliases(sections, aliases) {
   }
 
   return extractTables(sections[index].contentHtml).flat();
+}
+
+/**
+ * Table rows for a section, falling back to its bullet list when the source
+ * post writes the detail as prose instead of a table. Bullets shaped like
+ * "Post Name – Qualification" become {label, value}; plain bullets keep the
+ * section heading as the label so the text still reaches the page.
+ */
+function extractSectionDetailRows(sections, aliases) {
+  const tableRows = rowsToKeyValueList(extractSectionRowsByAliases(sections, aliases));
+  if (tableRows.length > 0) {
+    return tableRows;
+  }
+
+  const index = findSectionIndex(sections, aliases);
+  if (index < 0) {
+    return [];
+  }
+
+  const section = sections[index];
+  const rows = [];
+
+  for (const bullet of sectionBullets(section)) {
+    if (bullet.length < 4 || bullet.length > 400) continue;
+
+    const separator = bullet.match(/\s+[–—:-]\s+/);
+    if (separator?.index !== undefined) {
+      const label = bullet.slice(0, separator.index).trim();
+      const value = bullet.slice(separator.index + separator[0].length).trim();
+      if (label && value && label.length <= 120) {
+        rows.push({ label, value });
+        continue;
+      }
+    }
+
+    rows.push({ label: section.heading, value: bullet });
+  }
+
+  return rows;
 }
 
 function extractSectionLinks(sections, aliases, baseUrl) {
@@ -551,6 +614,14 @@ function extractImportantDates(sections, lookup, contentText) {
   return items.length > 0 ? items : undefined;
 }
 
+/** WordPress `date`/`modified` are naive local strings; treat them as UTC. */
+function normalizeTimestamp(value) {
+  if (!value) return null;
+  const raw = String(value);
+  const parsed = new Date(/(Z|[+-]\d{2}:?\d{2})$/.test(raw) ? raw : `${raw}Z`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
 function stripHash(url) {
   try {
     const parsed = new URL(url);
@@ -559,6 +630,27 @@ function stripHash(url) {
   } catch {
     return url;
   }
+}
+
+function hostOf(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "").toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * True when `url` points back at the aggregator we scraped rather than at the
+ * recruiting body. Those links must never be published as the official
+ * notification / apply destination — candidates would land on a mirror of the
+ * page they are already reading instead of the government portal.
+ */
+function isAggregatorUrl(url, sourcePageUrl) {
+  const host = hostOf(url);
+  if (!host) return true;
+  const sourceHost = hostOf(sourcePageUrl);
+  return host === sourceHost || host === "jobpulse.in";
 }
 
 function pickLink(links, patterns, options = {}) {
@@ -574,27 +666,199 @@ function pickLink(links, patterns, options = {}) {
         return false;
       }
 
+      if (options.excludeAggregator && isAggregatorUrl(link.href, options.sourcePage)) {
+        return false;
+      }
+
       return true;
     })?.href ?? null
   );
 }
 
+const FAQ_HEADING_PATTERN = /\bfaq|frequently asked|common question|questions? and answers?\b/;
+
+function cleanFaqQuestion(value) {
+  // Source posts prefix questions inconsistently: "Q1.", "Q.2", "1)", "Q -".
+  return stripHtml(value)
+    .replace(/^q\s*[.\-:)]?\s*\d*\s*[.\-:)]?\s*/i, "")
+    .replace(/^\d+\s*[.\-:)]\s*/, "")
+    .trim();
+}
+
+function faqPairsFromHtml(html) {
+  const pairs = [];
+
+  // Heading-then-paragraph layout.
+  for (const match of html.matchAll(
+    /<h[2-6]\b[^>]*>([\s\S]*?)<\/h[2-6]>\s*((?:<(?:p|div|ul|ol)\b[\s\S]*?<\/(?:p|div|ul|ol)>\s*){1,3})/gi,
+  )) {
+    pairs.push({ question: cleanFaqQuestion(match[1] ?? ""), answer: stripHtml(match[2] ?? "") });
+  }
+
+  // <p><strong>Question</strong> answer</p> layout.
+  for (const match of html.matchAll(
+    /<p\b[^>]*>\s*<(?:strong|b)\b[^>]*>([\s\S]*?)<\/(?:strong|b)>\s*([\s\S]*?)<\/p>/gi,
+  )) {
+    const answer = stripHtml(match[2] ?? "");
+    if (answer) {
+      pairs.push({ question: cleanFaqQuestion(match[1] ?? ""), answer });
+    }
+  }
+
+  // <details><summary>Question</summary> answer</details> accordion layout.
+  for (const match of html.matchAll(
+    /<details\b[^>]*>\s*<summary\b[^>]*>([\s\S]*?)<\/summary>([\s\S]*?)<\/details>/gi,
+  )) {
+    pairs.push({ question: cleanFaqQuestion(match[1] ?? ""), answer: stripHtml(match[2] ?? "") });
+  }
+
+  return pairs;
+}
+
 function extractFaq(sections) {
-  const faqSection = sections.find((section) => normalizeLabel(section.heading).includes("important links"));
-  if (!faqSection) {
+  const faqSections = sections.filter((section) => FAQ_HEADING_PATTERN.test(normalizeLabel(section.heading)));
+  if (faqSections.length === 0) {
     return undefined;
   }
 
-  const questionMatches = Array.from(
-    faqSection.contentHtml.matchAll(/<h[3-6]\b[^>]*>([\s\S]*?)<\/h[3-6]>\s*<p[^>]*>([\s\S]*?)<\/p>/gi),
-  )
-    .map((match) => ({
-      question: stripHtml(match[1] ?? ""),
-      answer: stripHtml(match[2] ?? ""),
-    }))
-    .filter((entry) => entry.question && entry.answer && /^q\d+/i.test(entry.question));
+  const seen = new Set();
+  const entries = [];
 
-  return questionMatches.length > 0 ? questionMatches : undefined;
+  for (const section of faqSections) {
+    // A heading that is itself the question ("Q1. Who can apply?") carries its
+    // answer in the section body rather than in a nested heading/paragraph.
+    const ownQuestion = cleanFaqQuestion(section.heading);
+    const ownAnswer = stripHtml(section.contentText);
+    const candidates = faqPairsFromHtml(section.contentHtml);
+
+    if (candidates.length === 0 && /\?/.test(section.heading) && ownAnswer) {
+      candidates.push({ question: ownQuestion, answer: ownAnswer });
+    }
+
+    for (const entry of candidates) {
+      const question = entry.question;
+      const answer = entry.answer;
+
+      if (!question || !answer || question.length < 8 || answer.length < 8) continue;
+      if (question.length > 300 || answer.length > 1200) continue;
+      if (normalizeLabel(question) === normalizeLabel(answer)) continue;
+
+      const key = normalizeLabel(question);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      entries.push({ question, answer });
+    }
+  }
+
+  return entries.length > 0 ? entries.slice(0, 12) : undefined;
+}
+
+// Heading wording varies a lot between source posts; each list is the set of
+// headings observed across the feed for one logical section.
+const EDUCATION_ALIASES = [
+  "educational qualification",
+  "education qualification",
+  "educational qualifications",
+  "qualification",
+  "qualifications",
+  "eligibility",
+  "eligibility criteria",
+  "education details",
+  "post wise eligibility",
+  "post wise qualification",
+];
+const AGE_ALIASES = ["age limit", "age limits", "age criteria", "age details", "age limit as on"];
+const FEE_ALIASES = ["application fee", "application fees", "fee details", "examination fee", "fees"];
+const VACANCY_ALIASES = [
+  "vacancy details",
+  "vacancy detail",
+  "post details",
+  "post wise vacancy",
+  "vacancy",
+  "total vacancy",
+  "total posts",
+];
+const SALARY_ALIASES = ["salary structure", "salary", "pay scale", "salary details", "pay matrix", "stipend"];
+const DOCUMENTS_ALIASES = [
+  "documents required",
+  "required documents",
+  "documents needed",
+  "document required",
+  "list of documents",
+  "documents to carry",
+  "required document",
+];
+const HOW_TO_APPLY_ALIASES = [
+  "how to apply",
+  "how to apply online",
+  "application process",
+  "how to fill the form",
+  "steps to apply",
+  "apply process",
+  "how to apply for",
+];
+const SELECTION_ALIASES = [
+  "selection process",
+  "selection procedure",
+  "selection criteria",
+  "mode of selection",
+  "recruitment process",
+];
+
+const OFFICIAL_DOMAIN_PATTERN = /(^|\.)(gov\.in|nic\.in|gov|edu\.in|ac\.in|org\.in)$/i;
+
+/** Government portals and PSU sites we can safely treat as the official source. */
+function isOfficialDomain(url) {
+  const host = hostOf(url);
+  if (!host) return false;
+  if (OFFICIAL_DOMAIN_PATTERN.test(host)) return true;
+  return /(^|\.)(ibps|sbi|rrbapply|rrcb|upsc|ssc|nta|joinindianarmy|indianrailways)\./i.test(host);
+}
+
+/**
+ * Answers here only restate values already extracted from the notification —
+ * nothing is inferred or invented, because a wrong eligibility or fee answer on
+ * a recruitment page has real consequences for applicants.
+ */
+function buildFactualFaq({ title, openings, lastDate, eligibility, ageLimit, applicationFee, salary, selectionProcess, applyUrl, notificationUrl }) {
+  const entries = [];
+  const usable = (value) =>
+    typeof value === "string" && value.trim().length >= 3 && !/^verify on official website$/i.test(value.trim());
+
+  if (usable(eligibility)) {
+    entries.push({
+      question: `What is the educational qualification for ${title}?`,
+      answer: `${eligibility.trim()} Confirm the exact qualification in the official notification before applying.`,
+    });
+  }
+  if (usable(ageLimit)) {
+    entries.push({ question: `What is the age limit for ${title}?`, answer: `${ageLimit.trim()} Age relaxation applies as per government rules.` });
+  }
+  if (usable(applicationFee)) {
+    entries.push({ question: `What is the application fee?`, answer: applicationFee.trim() });
+  }
+  if (usable(openings)) {
+    entries.push({ question: `How many vacancies are available?`, answer: `${openings.trim()} as announced in the notification.` });
+  }
+  if (usable(lastDate)) {
+    entries.push({ question: `What is the last date to apply?`, answer: `The last date to apply is ${lastDate.trim()}. Apply before the deadline as it is rarely extended.` });
+  }
+  if (usable(salary)) {
+    entries.push({ question: `What is the salary?`, answer: salary.trim() });
+  }
+  if (usable(selectionProcess)) {
+    entries.push({ question: `What is the selection process?`, answer: selectionProcess.trim().slice(0, 600) });
+  }
+  if (applyUrl || notificationUrl) {
+    entries.push({
+      question: `How can I apply for ${title}?`,
+      answer: applyUrl
+        ? `Apply online through the official portal: ${applyUrl}`
+        : `Read the official notification and follow the application instructions given in it: ${notificationUrl}`,
+    });
+  }
+
+  return entries.slice(0, 8);
 }
 
 function parseJobPost(post, categoriesById) {
@@ -618,21 +882,11 @@ function parseJobPost(post, categoriesById) {
   const importantDateRows = rowsToKeyValueList(
     extractSectionRowsByAliases(sections, ["important dates"]),
   );
-  const feeRows = rowsToKeyValueList(
-    extractSectionRowsByAliases(sections, ["application fee"]),
-  );
-  const ageRows = rowsToKeyValueList(
-    extractSectionRowsByAliases(sections, ["age limit"]),
-  );
-  const vacancyRows = rowsToKeyValueList(
-    extractSectionRowsByAliases(sections, ["vacancy details"]),
-  );
-  const educationRows = rowsToKeyValueList(
-    extractSectionRowsByAliases(sections, ["educational qualification", "eligibility"]),
-  );
-  const salaryRows = rowsToKeyValueList(
-    extractSectionRowsByAliases(sections, ["salary structure", "salary"]),
-  );
+  const feeRows = extractSectionDetailRows(sections, FEE_ALIASES);
+  const ageRows = extractSectionDetailRows(sections, AGE_ALIASES);
+  const vacancyRows = extractSectionDetailRows(sections, VACANCY_ALIASES);
+  const educationRows = extractSectionDetailRows(sections, EDUCATION_ALIASES);
+  const salaryRows = extractSectionDetailRows(sections, SALARY_ALIASES);
   const importantLinks = extractSectionLinks(sections, ["important links"], post.link);
   const shortInformation = extractShortInformation(contentText);
   const introFacts = extractIntroFacts(contentText);
@@ -649,30 +903,43 @@ function parseJobPost(post, categoriesById) {
   const openings = firstNonEmpty(
     title.match(/\bfor\s+([\d,+]+)\s+posts?\b/i)?.[1],
     title.match(/\b([\d,+]+)\s+posts?\b/i)?.[1],
-    readRowValue(lookup, ["total post", "total posts", "vacancy", "vacancy details"]),
+    readRowValue(lookup, ["total post", "total posts", "total vacancy", "total vacancies", "no of posts", "number of posts", "vacancy", "vacancy details"]),
+    // Post-wise tables have no total row; sum the per-post counts instead.
+    (() => {
+      const counts = vacancyRows
+        .map((row) => Number.parseInt(String(row.value).replace(/[^\d]/g, ""), 10))
+        .filter((value) => Number.isFinite(value) && value > 0);
+      const total = counts.reduce((sum, value) => sum + value, 0);
+      return counts.length >= 2 && total > 0 ? String(total) : null;
+    })(),
+    contentText.match(/\b([\d,]{2,7})\s+(?:total\s+)?(?:posts?|vacanc(?:y|ies))\b/i)?.[1],
   );
 
   const eligibility = sanitizeExtractedField(firstNonEmpty(
-    readRowValue(lookup, ["educational qualification", "qualification", "eligibility", "essential qualification"]),
-    compactSectionValue(extractSectionText(sections, ["educational qualification", "eligibility"])),
+    readRowValue(lookup, [...EDUCATION_ALIASES, "essential qualification"]),
+    compactSectionValue(extractSectionText(sections, EDUCATION_ALIASES)),
+    educationRows[0] ? `${educationRows[0].label}: ${educationRows[0].value}` : null,
     extractLabeledValue(contentText, ["eligibility", "qualification", "educational qualification"]),
   ));
 
   const ageLimit = firstNonEmpty(
-    readRowValue(lookup, ["age limit", "minimum age", "maximum age"]),
-    compactSectionValue(extractSectionText(sections, ["age limit"])),
+    readRowValue(lookup, [...AGE_ALIASES, "minimum age", "maximum age"]),
+    compactSectionValue(extractSectionText(sections, AGE_ALIASES)),
+    ageRows[0] ? `${ageRows[0].label}: ${ageRows[0].value}` : null,
     extractLabeledValue(contentText, ["age limit", "age"]),
   );
 
   const applicationFee = firstNonEmpty(
-    readRowValue(lookup, ["application fee", "application fees"]),
-    compactSectionValue(extractSectionText(sections, ["application fee"])),
+    readRowValue(lookup, FEE_ALIASES),
+    compactSectionValue(extractSectionText(sections, FEE_ALIASES)),
+    feeRows[0] ? `${feeRows[0].label}: ${feeRows[0].value}` : null,
     extractLabeledValue(contentText, ["application fee"]),
   );
 
   const salary = sanitizeExtractedField(firstNonEmpty(
-    readRowValue(lookup, ["salary", "pay scale", "stipend"]),
-    compactSectionValue(extractSectionText(sections, ["salary structure", "salary", "pay scale", "stipend"])),
+    readRowValue(lookup, SALARY_ALIASES),
+    compactSectionValue(extractSectionText(sections, SALARY_ALIASES)),
+    salaryRows[0] ? `${salaryRows[0].label}: ${salaryRows[0].value}` : null,
   ), { maxLength: 500, blockedSnippets: ["post title:", "post date / update:"] });
 
   const syllabus = sanitizeExtractedField(firstNonEmpty(
@@ -688,57 +955,60 @@ function parseJobPost(post, categoriesById) {
   );
   const lastDate = normalizeDate(lastDateText);
 
-  const notificationUrl = pickLink(links, [/official notification/i, /download notification/i, /notification pdf/i, /\.pdf(\?|$)/i], {
-    sourcePage: post.link,
-  });
+  const officialLinkOptions = { sourcePage: post.link, excludeAggregator: true };
+  const officialImportantLinks = importantLinks.filter((link) => !isAggregatorUrl(link.href, post.link));
+
+  const notificationUrl = pickLink(
+    links,
+    [/official notification/i, /download notification/i, /notification pdf/i, /\.pdf(\?|$)/i],
+    officialLinkOptions,
+  );
   const applyUrl =
-    importantLinks.find((link) => /apply online|registration|apply link/i.test(link.label))?.href ??
-    pickLink(
-      links.filter((link) => {
-        try {
-          return new URL(link.href).hostname !== new URL(post.link).hostname;
-        } catch {
-          return true;
-        }
-      }),
-      [/apply online/i, /registration/i, /\bapply\b/i],
-      {
-        sourcePage: post.link,
-      },
-    );
+    officialImportantLinks.find((link) => /apply online|registration|apply link/i.test(link.label))?.href ??
+    pickLink(links, [/apply online/i, /registration/i, /\bapply\b/i], officialLinkOptions);
   const officialWebsiteFromLinks =
-    importantLinks.find((link) => /official website/i.test(link.label))?.href ??
-    pickLink(links, [/official website/i], { sourcePage: post.link });
+    officialImportantLinks.find((link) => /official website/i.test(link.label))?.href ??
+    pickLink(links, [/official website/i], officialLinkOptions);
+  // Last resort: any outbound link on a recognised government domain. Many
+  // posts link the portal by bare URL with no "official website" label.
+  const officialDomainLink =
+    officialImportantLinks.find((link) => isOfficialDomain(link.href))?.href ??
+    links.find((link) => isOfficialDomain(link.href) && !isAggregatorUrl(link.href, post.link))?.href ??
+    null;
+  // Deliberately no `post.link` fallback: an aggregator URL presented as the
+  // official website is worse than showing no official link at all.
   const officialUrl = firstNonEmpty(
     officialWebsiteFromLinks,
     notificationUrl,
     applyUrl,
-    post.link,
+    officialDomainLink,
   );
 
-  const selectionSteps = collectChildSections(sections, ["selection process"]).map((section) => ({
+  const selectionSteps = collectChildSections(sections, SELECTION_ALIASES).map((section) => ({
     title: section.title,
     bullets: section.bullets.slice(0, 10),
   }));
-  const documentsRequired = collectChildSections(sections, ["documents required"]).map((section) => ({
+  const documentsRequired = collectChildSections(sections, DOCUMENTS_ALIASES).map((section) => ({
     title: section.title,
     bullets: section.bullets.slice(0, 10),
   }));
-  const howToApplySteps = collectChildSections(sections, ["how to apply", "how to apply online"]).map((section) => ({
+  const howToApplySteps = collectChildSections(sections, HOW_TO_APPLY_ALIASES).map((section) => ({
     title: section.title,
     bullets: section.bullets.slice(0, 10),
   }));
 
   const selectionProcess = sanitizeExtractedField(firstNonEmpty(
-    compactSectionValue(extractSectionText(sections, ["selection process"]), 1000),
+    compactSectionValue(extractSectionText(sections, SELECTION_ALIASES), 1000),
     readRowValue(lookup, ["selection process"]),
   ), { maxLength: 2000, blockedSnippets: ["post title:", "post date / update:", "overview"] });
 
   const summary = buildSummary(excerptHtml, shortInformation || contentText);
 
   const overview = overviewRows.length > 0 ? overviewRows : introFacts;
-  const importantLinksForMeta = importantLinks.length > 0
-    ? importantLinks
+  // Only official destinations here — an "Apply Online" row that points back at
+  // the aggregator sends candidates in a circle.
+  const importantLinksForMeta = officialImportantLinks.length > 0
+    ? officialImportantLinks
     : [
         officialUrl ? { label: "Official Website", href: officialUrl } : null,
         notificationUrl ? { label: "Official Notification", href: notificationUrl } : null,
@@ -756,9 +1026,11 @@ function parseJobPost(post, categoriesById) {
   const sanitizedFees = feeRows.slice(0, 16);
   const sanitizedSalary = salaryRows.slice(0, 12);
 
-  const applyUrlFallback = pickLink(links, [/apply online/i, /registration/i, /\bapply\b/i], {
-    sourcePage: post.link,
-  });
+  const applyUrlFallback = pickLink(
+    links,
+    [/apply|online form|registration|recruitment portal/i],
+    officialLinkOptions,
+  );
 
   return {
     fetch_key: `jobpulse-wordpress:${post.id}`,
@@ -797,7 +1069,22 @@ function parseJobPost(post, categoriesById) {
       howToApplySteps,
       importantDates: importantDateItems,
       importantLinks: importantLinksForMeta,
-      faq: extractFaq(sections) ?? [],
+      // Source posts carry no FAQ markup, so fall back to Q&A built strictly
+      // from the fields extracted above.
+      faq:
+        extractFaq(sections) ??
+        buildFactualFaq({
+          title,
+          openings: openings ? `${openings} Posts` : null,
+          lastDate,
+          eligibility,
+          ageLimit,
+          applicationFee,
+          salary,
+          selectionProcess,
+          applyUrl: applyUrl ?? applyUrlFallback ?? null,
+          notificationUrl,
+        }),
       wordpressPostId: post.id,
       wordpressCategories: categories.map((entry) => ({
         id: entry.id,
@@ -1013,6 +1300,9 @@ function toPublicJobRow(row) {
     deadline,
     source_type: "official",
     source_url: row.source_url ?? row.official_url ?? row.notification_url ?? null,
+    // Without this every imported listing inherits `created_at` and the whole
+    // board reads "Posted today" on each run.
+    published_at: normalizeTimestamp(meta.publishedAt) ?? normalizeTimestamp(meta.modifiedAt),
   };
 }
 
@@ -1035,11 +1325,14 @@ async function main() {
   const tableIndex = process.argv.indexOf("--table");
   const targetTable = tableIndex >= 0 ? process.argv[tableIndex + 1] : DEFAULT_DB_TABLE;
 
-  const connection = await connect();
-  const supabase = createDb(connection);
+  // --export-json and --dry-run only read the upstream feed, so they must not
+  // require database credentials.
+  const needsDatabase = !exportJsonPath && !dryRun;
+  const connection = needsDatabase ? await connect() : null;
+  const supabase = connection ? createDb(connection) : null;
 
   const [categoriesById, posts] = await Promise.all([fetchCategories(), loadAllJobpulsePosts()]);
-  const sourceId = !exportJsonPath && targetTable === "government_jobs" ? await getSourceId(supabase) : null;
+  const sourceId = supabase && targetTable === "government_jobs" ? await getSourceId(supabase) : null;
   const parsedJobs = posts
     .map((post) => parseJobPost(post, categoriesById))
     .filter((job) => job.title && job.summary)

@@ -148,8 +148,11 @@ function governmentJobToPublicJob(job: GovernmentJob): Job {
       job.notificationUrl ??
       job.sourceUrl ??
       NCS_HOME_URL,
-    createdAt: nowIso,
-    updatedAt: nowIso,
+    // Use the source listing's own publication date. Stamping `now` here made
+    // every government listing read "Posted today" on every request and, under
+    // the default "latest" sort, permanently outrank real employer postings.
+    createdAt: job.publishedAt ?? nowIso,
+    updatedAt: job.publishedAt ?? nowIso,
     status: "active",
     featured: false,
     noCandidatePayment: true,
@@ -162,7 +165,7 @@ function governmentJobToPublicJob(job: GovernmentJob): Job {
     sourceName: "JobPulse Government Import",
     importedAt: nowIso,
     officialVerified: true,
-    publishedAt: null,
+    publishedAt: job.publishedAt ?? null,
   };
 }
 
@@ -452,6 +455,9 @@ const JOB_PUBLIC_SELECT = [
   "expires_at",
   "source_type",
   "source_url",
+  // Without this, dbRowToJob always saw published_at as undefined, so posted
+  // dates and the 24h/7d/30d filter silently fell back to created_at.
+  "published_at",
   "created_at",
   "updated_at",
 ].join(", ");

@@ -198,6 +198,8 @@ export interface GovernmentJob {
   notificationUrl?: string;
   officialApplyUrl?: string;
   sourceUrl?: string;
+  /** Original publication date from the source listing, not the import time. */
+  publishedAt?: string;
   status?: "pending_review" | "approved" | "rejected";
 }
 

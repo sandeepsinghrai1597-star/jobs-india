@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { GovernmentJob } from "@/types";
 import jobpulseImport from "@/lib/data/jobpulse-import.json";
@@ -233,6 +232,7 @@ function rowToGovernmentJob(row: GovernmentJobRow | ImportedGovernmentJobRow): G
     importantDates: readMetadataStringList(metadata, "importantDates"),
     importantLinks: readMetadataLinkList(metadata, "importantLinks"),
     faq: readMetadataFaq(metadata),
+    publishedAt: readMetadataString(metadata, "publishedAt") ?? readMetadataString(metadata, "modifiedAt"),
     status,
   };
 }
@@ -362,14 +362,48 @@ function rowFromJobpulseImport(row: JobpulseImportJobRow): ImportedGovernmentJob
   };
 }
 
-async function getGovernmentJobsClient() {
-  return getSupabaseAdminClient() ?? (await createClient());
+let warnedAboutFallback = false;
+
+/**
+ * The bundled JSON snapshot keeps pages rendering when the database is
+ * unreachable, which also makes a total outage look like a working site. Log it
+ * once per process so the degraded state is at least discoverable in the host
+ * logs; `/api/health` reports it explicitly.
+ */
+function warnFallback(reason: string) {
+  if (warnedAboutFallback) return;
+  warnedAboutFallback = true;
+  console.error(
+    `[government-jobs] Serving the bundled snapshot instead of live data: ${reason}. ` +
+      "Check MYSQL_* environment variables — see /api/health.",
+  );
+}
+
+/**
+ * Government job listings are public data — no per-user filtering — so they are
+ * read with the admin client only.
+ *
+ * The cookie-bound `createClient()` must NOT be used as a fallback here: it
+ * calls `cookies()`, which throws inside `generateStaticParams`, `unstable_cache`,
+ * and static rendering. That throw was being swallowed by the catch below, so
+ * `/government-jobs/[segment]`, `/jobs/[slug]`, and `/api/sitemap` silently fell
+ * back to the bundled snapshot and were forced to render dynamically. Both
+ * clients hit the same MySQL pool, so the fallback bought nothing.
+ */
+function getGovernmentJobsClient() {
+  return getSupabaseAdminClient();
 }
 
 export async function getApprovedGovernmentJobs(options?: { includeExpired?: boolean }) {
   const includeExpired = options?.includeExpired ?? false;
   try {
-    const client = await getGovernmentJobsClient();
+    const client = getGovernmentJobsClient();
+
+    if (!client) {
+      warnFallback("MYSQL_* environment variables are not set");
+      return finalizeGovernmentJobs(mergeGovernmentJobs(importedGovernmentJobs, staticGovernmentJobs), includeExpired);
+    }
+
     const importedResult = await client
       .from("jobpulse_import_jobs")
       .select(
@@ -411,6 +445,9 @@ export async function getApprovedGovernmentJobs(options?: { includeExpired?: boo
     }
 
     if (error || !data || data.length === 0) {
+      if (importedRows.length === 0) {
+        warnFallback(error ? `government_jobs query failed (${error.message})` : "no rows returned");
+      }
       return finalizeGovernmentJobs(
         mergeGovernmentJobs(importedRows.map(rowToGovernmentJob), mergeGovernmentJobs(importedGovernmentJobs, staticGovernmentJobs)),
         includeExpired,
@@ -424,7 +461,8 @@ export async function getApprovedGovernmentJobs(options?: { includeExpired?: boo
       ),
       includeExpired,
     );
-  } catch {
+  } catch (error) {
+    warnFallback(error instanceof Error ? error.message : "database client unavailable");
     return finalizeGovernmentJobs(mergeGovernmentJobs(importedGovernmentJobs, staticGovernmentJobs), includeExpired);
   }
 }
