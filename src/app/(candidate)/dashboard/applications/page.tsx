@@ -51,10 +51,10 @@ export default async function CandidateApplicationsPage() {
       <div className="grid gap-4">
         {applications.length > 0 ? (
           applications.map((application) => (
-            <Card key={application.id} className="rounded-[1.75rem] border-white/10 bg-slate-950/70 backdrop-blur">
+            <Card key={application.id} className="rounded-[1.75rem] border-slate-200 bg-slate-100 backdrop-blur">
               <CardContent className="flex flex-col gap-3 p-6 md:flex-row md:items-center md:justify-between">
                 <div className="space-y-1">
-                  <p className="text-lg font-semibold text-slate-50">
+                  <p className="text-lg font-semibold text-slate-900">
                     {application.jobs?.title ?? "Job unavailable"}
                   </p>
                   <p className="text-sm text-muted-foreground">
@@ -78,7 +78,7 @@ export default async function CandidateApplicationsPage() {
             </Card>
           ))
         ) : (
-            <Card className="rounded-[1.75rem] border-white/10 bg-slate-950/70 backdrop-blur">
+            <Card className="rounded-[1.75rem] border-slate-200 bg-slate-100 backdrop-blur">
               <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
               No applications yet. Start applying from job detail pages and your tracker will show
               updates here.

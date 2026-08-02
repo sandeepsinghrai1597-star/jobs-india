@@ -1,15 +1,14 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { getApprovedGovernmentJobs } from "@/lib/government-jobs/live";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { filterVisibleJobRows } from "@/lib/jobs/visibility";
 import type { GovernmentJob, Job } from "@/types";
+import type { DbRow } from "@/lib/db/mysql";
 
 const NCS_HOME_URL = "https://www.ncs.gov.in/";
 export const PUBLIC_JOBS_REVALIDATE_SECONDS = 300;
 
-let publicReadClient: ReturnType<typeof createSupabaseClient> | null = null;
 
 function extractSalaryBounds(value: string | undefined) {
   if (!value) {
@@ -616,7 +615,7 @@ export async function loadOfficialJobsFromSupabase() {
     return [];
   }
 
-  return data.map((row) => dbRowToJob(row as unknown as SupabaseJobRow));
+  return data.map((row: DbRow) => dbRowToJob(row as unknown as SupabaseJobRow));
 }
 
 async function persistOfficialJobs(jobs: Job[]) {
@@ -671,30 +670,10 @@ export function dedupeJobs(input: Job[]) {
 }
 
 async function getPublishedJobsClient() {
-  const admin = getSupabaseAdminClient();
-  if (admin) {
-    return admin;
-  }
-
-  if (!publicReadClient) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey =
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      return null;
-    }
-
-    publicReadClient = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    });
-  }
-
-  return publicReadClient;
+  // Public job reads go through the same pooled MySQL connection as
+  // privileged reads; row visibility is enforced by the query filters below
+  // rather than by a separate anonymous role.
+  return getSupabaseAdminClient();
 }
 
 const loadUnifiedJobs = unstable_cache(async () => {

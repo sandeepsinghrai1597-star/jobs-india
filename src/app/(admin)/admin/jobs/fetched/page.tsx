@@ -115,19 +115,19 @@ export default async function AdminFetchedJobsPage() {
     >
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+          <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
             <CardContent className="p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-800">Pending review</p>
               <p className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">{pendingCount}</p>
             </CardContent>
           </Card>
-          <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+          <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
             <CardContent className="p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-800">Published from fetch</p>
               <p className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">{publishedCount}</p>
             </CardContent>
           </Card>
-          <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+          <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
             <CardContent className="flex h-full items-center justify-between gap-3 p-5">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-800">Source controls</p>
@@ -140,7 +140,7 @@ export default async function AdminFetchedJobsPage() {
           </Card>
         </div>
 
-        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
           <CardHeader className="border-b border-slate-200/80 bg-[linear-gradient(135deg,rgba(14,165,233,0.08),rgba(59,130,246,0.03)_60%,rgba(255,255,255,0.96)_100%)]">
             <CardTitle>Review queue</CardTitle>
             <CardDescription>Every item below is staged outside the public jobs list until an admin approves it.</CardDescription>

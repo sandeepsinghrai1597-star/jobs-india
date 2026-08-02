@@ -1,56 +1,35 @@
 import { expect, test } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
 import { createJobAndGetId, fillCandidateOnboarding, fillEmployerOnboarding, getFixtures, login } from "./utils";
 
 test.describe("Security boundaries", () => {
-  test("candidate cannot read another candidate profile over Supabase RLS", async () => {
+  // The database is no longer reachable from the browser, so profile
+  // isolation is enforced by the API scoping every read to the session user.
+  test("candidate profile API only ever returns the signed-in candidate", async ({ browser }) => {
     const fixtures = getFixtures();
-    const altClient = createClient(fixtures.supabaseUrl, fixtures.publishableKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    });
 
-    const altSignIn = await altClient.auth.signInWithPassword({
-      email: fixtures.users.candidateAlt.email,
-      password: fixtures.users.candidateAlt.password,
-    });
+    const altPage = await browser.newPage();
+    await login(altPage, fixtures.users.candidateAlt.email, fixtures.users.candidateAlt.password);
+    await fillCandidateOnboarding(altPage);
+    const { profile: altProfile } = await (await altPage.request.fetch("/api/candidate/profile")).json();
+    await altPage.close();
 
-    expect(altSignIn.error).toBeNull();
+    const page = await browser.newPage();
+    await login(page, fixtures.users.candidate.email, fixtures.users.candidate.password);
+    await fillCandidateOnboarding(page);
 
-    const altUpdate = await altClient.from("candidate_profiles").upsert(
-      {
-        user_id: altSignIn.data.user?.id,
-        full_name: "Alt Candidate",
-        skills: ["Security Testing"],
-      },
-      { onConflict: "user_id" },
-    );
+    const response = await page.request.fetch("/api/candidate/profile");
+    expect(response.status()).toBe(200);
+    const { profile } = await response.json();
 
-    expect(altUpdate.error).toBeNull();
+    // Same endpoint, different session — it must not return the other user's row.
+    expect(altProfile.userId).toBeTruthy();
+    expect(profile.userId).not.toBe(altProfile.userId);
+    await page.close();
+  });
 
-    const client = createClient(fixtures.supabaseUrl, fixtures.publishableKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    });
-
-    const signIn = await client.auth.signInWithPassword({
-      email: fixtures.users.candidate.email,
-      password: fixtures.users.candidate.password,
-    });
-
-    expect(signIn.error).toBeNull();
-
-    const response = await client
-      .from("candidate_profiles")
-      .select("user_id, full_name")
-      .eq("user_id", altSignIn.data.user?.id ?? "");
-
-    expect(response.error).toBeNull();
-    expect(response.data ?? []).toHaveLength(0);
+  test("candidate profile API rejects unauthenticated requests", async ({ request }) => {
+    const response = await request.fetch("/api/candidate/profile");
+    expect(response.status()).toBe(401);
   });
 
   test("employer cannot mutate another employer's job", async ({ page }) => {

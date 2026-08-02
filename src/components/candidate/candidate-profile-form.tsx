@@ -236,7 +236,7 @@ export function CandidateProfileForm({
               className="min-h-32"
             />
 
-            <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-muted-foreground">
+            <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-muted-foreground">
               <input
                 type="checkbox"
                 checked={requestVerification}

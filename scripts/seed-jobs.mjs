@@ -1,26 +1,9 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { createClient } from "@supabase/supabase-js";
+import { connect, createDb, loadEnvFiles } from "./lib/mysql-client.mjs";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const projectRoot = path.resolve(__dirname, "..");
+loadEnvFiles([".env.local", ".env"]);
 
-loadEnvFile(".env.local");
-loadEnvFile(".env");
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !serviceRoleKey) {
-  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.");
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, serviceRoleKey, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+const connection = await connect();
+const supabase = createDb(connection);
 
 const sizeRanges = ["11-50", "51-200", "201-500", "501-1000"];
 const extraSkills = [
@@ -235,17 +218,31 @@ const companyRows = companies.map(([name, industry, city, state, website], index
   verified: true,
 }));
 
-const { data: upsertedCompanies, error: companyError } = await supabase
+const { error: companyError } = await supabase
   .from("companies")
-  .upsert(companyRows, { onConflict: "slug" })
-  .select("id, slug");
+  .upsert(companyRows, { onConflict: "slug" });
 
 if (companyError) {
   console.error("Failed to seed companies:", formatSeedError(companyError));
   process.exit(1);
 }
 
-const companyIdBySlug = new Map(upsertedCompanies.map((company) => [company.slug, company.id]));
+// Read the ids back rather than trusting the upsert payload: rows that
+// already existed keep their original id, which the payload does not carry.
+const { data: storedCompanies, error: companyReadError } = await supabase
+  .from("companies")
+  .select("id, slug")
+  .in(
+    "slug",
+    companyRows.map((company) => company.slug),
+  );
+
+if (companyReadError) {
+  console.error("Failed to read seeded companies:", formatSeedError(companyReadError));
+  process.exit(1);
+}
+
+const companyIdBySlug = new Map(storedCompanies.map((company) => [company.slug, company.id]));
 const jobRows = [];
 
 companyRows.forEach((company, companyIndex) => {
@@ -320,23 +317,8 @@ if (jobsError) {
 
 console.log(`Seeded ${companyRows.length} companies and ${jobRows.length} active jobs.`);
 
-function loadEnvFile(fileName) {
-  const filePath = path.join(projectRoot, fileName);
-  if (!fs.existsSync(filePath)) return;
+await connection.end();
 
-  const content = fs.readFileSync(filePath, "utf8");
-  for (const line of content.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const separator = trimmed.indexOf("=");
-    if (separator === -1) continue;
-    const key = trimmed.slice(0, separator).trim();
-    const value = trimmed.slice(separator + 1).trim().replace(/^['"]|['"]$/g, "");
-    if (!(key in process.env)) {
-      process.env[key] = value;
-    }
-  }
-}
 
 function slugify(value) {
   return value
@@ -360,7 +342,7 @@ function formatSeedError(error) {
   const message = error?.message ?? String(error);
 
   if (message.toLowerCase().includes("permission denied")) {
-    return `${message}. Apply supabase/migrations/20260620160000_regrant_service_role_seed_permissions.sql, then rerun npm run seed:jobs.`;
+    return `${message}. Confirm the MySQL user has write access to this database, then rerun npm run seed:jobs.`;
   }
 
   return message;

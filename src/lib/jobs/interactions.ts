@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import type { DbRow } from "@/lib/db/mysql";
 
 export interface JobInteractionState {
   isApplied: boolean;
@@ -43,8 +44,8 @@ export async function getJobInteractionState(jobIds: string[]) {
       .in("job_id", uniqueJobIds),
   ]);
 
-  const savedIds = new Set((savedResult.data ?? []).map((row) => row.job_id));
-  const appliedIds = new Set((appliedResult.data ?? []).map((row) => row.job_id));
+  const savedIds = new Set((savedResult.data ?? []).map((row: DbRow) => row.job_id));
+  const appliedIds = new Set((appliedResult.data ?? []).map((row: DbRow) => row.job_id));
 
   for (const jobId of uniqueJobIds) {
     defaultState.set(jobId, {

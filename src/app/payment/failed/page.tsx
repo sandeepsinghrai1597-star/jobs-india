@@ -35,7 +35,7 @@ export default async function PaymentFailedPage({ searchParams }: PaymentFailedP
             </p>
           </div>
 
-          <div className="space-y-3 rounded-3xl border border-rose-100 bg-white/85 p-5 text-sm text-slate-700">
+          <div className="space-y-3 rounded-3xl border border-rose-100 bg-white p-5 text-sm text-slate-700">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Order ID</p>
               <p className="mt-2 break-all font-medium text-slate-900">{params.order_id ?? "--"}</p>

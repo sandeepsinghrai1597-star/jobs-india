@@ -135,7 +135,7 @@ export default async function InternshipDetailPage({
 
       <div className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr]">
         <div className="space-y-8">
-          <div className="space-y-5 rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-sm backdrop-blur">
+          <div className="space-y-5 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm backdrop-blur">
             <div className="flex flex-wrap gap-2">
               {internship.isPaid ? <Badge className="rounded-full">Paid internship</Badge> : null}
               <Badge variant="outline" className="rounded-full capitalize">
@@ -146,7 +146,7 @@ export default async function InternshipDetailPage({
               </Badge>
             </div>
             <div className="space-y-3">
-              <h1 className="font-heading text-4xl font-semibold tracking-tight text-slate-50">
+              <h1 className="font-heading text-4xl font-semibold tracking-tight text-slate-900">
                 {internship.title}
               </h1>
               <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
@@ -186,7 +186,7 @@ export default async function InternshipDetailPage({
             )}
           </div>
 
-          <Card className="rounded-[2rem] border-white/10 bg-white/5 backdrop-blur">
+          <Card className="rounded-[2rem] border-slate-200 bg-white backdrop-blur">
             <CardContent className="space-y-8 p-8">
               <section className="space-y-3">
                 <h2 className="font-heading text-2xl font-semibold">About this internship</h2>
@@ -223,7 +223,7 @@ export default async function InternshipDetailPage({
         </div>
 
         <div className="space-y-6">
-          <Card className="rounded-[2rem] border-white/10 bg-white/5 backdrop-blur">
+          <Card className="rounded-[2rem] border-slate-200 bg-white backdrop-blur">
             <CardContent className="space-y-4 p-6">
               <h2 className="font-semibold">Quick facts</h2>
               <div className="space-y-3 text-sm text-muted-foreground">

@@ -247,7 +247,7 @@ export default async function GovernmentJobsDynamicPage({
           }}
         />
 
-        <div className="rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-sm backdrop-blur">
+        <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm backdrop-blur">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
             Government Job Category
           </p>
@@ -264,7 +264,7 @@ export default async function GovernmentJobsDynamicPage({
 
         <section className="mt-10 grid gap-6">
           {items.map((job) => (
-            <Card key={job.id} className="rounded-[1.75rem] border-white/10 bg-white/5 backdrop-blur">
+            <Card key={job.id} className="rounded-[1.75rem] border-slate-200 bg-white backdrop-blur">
               <CardContent className="space-y-5 p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
@@ -273,7 +273,7 @@ export default async function GovernmentJobsDynamicPage({
                     </p>
                     <h2 className="mt-2 font-heading text-2xl font-semibold">{job.title}</h2>
                   </div>
-                  <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted-foreground">
+                  <span className="rounded-full border border-slate-200 px-3 py-1 text-xs text-muted-foreground">
                     {job.state}
                   </span>
                 </div>

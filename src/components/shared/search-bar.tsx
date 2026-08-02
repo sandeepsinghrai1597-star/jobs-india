@@ -38,7 +38,7 @@ export function SearchBar() {
           onChange={(event) => setKeyword(event.target.value)}
           placeholder="Job title, skill, company"
           aria-label="Search jobs by title, skill, or company"
-          className="h-12 rounded-lg border-slate-300 bg-white pl-10 text-slate-950 placeholder:text-slate-400 focus-visible:border-primary"
+          className="h-12 rounded-lg border-slate-300 bg-white pl-10 text-slate-950 placeholder:text-slate-500 focus-visible:border-primary"
         />
       </div>
       <Input
@@ -46,7 +46,7 @@ export function SearchBar() {
         onChange={(event) => setCity(event.target.value)}
         placeholder="City or location"
         aria-label="City or location"
-        className="h-12 rounded-lg border-slate-300 bg-white text-slate-950 placeholder:text-slate-400 focus-visible:border-primary"
+        className="h-12 rounded-lg border-slate-300 bg-white text-slate-950 placeholder:text-slate-500 focus-visible:border-primary"
       />
       <Button className="h-12 rounded-lg px-7 font-semibold shadow-sm">Find Jobs</Button>
     </form>

@@ -35,6 +35,7 @@ import type { Job } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { DbRow } from "@/lib/db/mysql";
 
 export const metadata = buildMetadata({
   title: "Candidate Dashboard",
@@ -178,13 +179,13 @@ function EmptyState({
   action?: { href: string; label: string };
 }) {
   return (
-    <div className="flex min-h-44 flex-col items-start justify-center gap-4 rounded-[1.5rem] border border-dashed border-white/10 bg-white/4 p-6">
+    <div className="flex min-h-44 flex-col items-start justify-center gap-4 rounded-[1.5rem] border border-dashed border-slate-200 bg-white p-6">
       <div className="flex size-10 items-center justify-center rounded-2xl bg-primary/12 text-primary">
         <Icon className="size-4" />
       </div>
       <div className="space-y-1">
-        <p className="font-semibold text-white">{title}</p>
-        <p className="text-sm leading-6 text-slate-400">{description}</p>
+        <p className="font-semibold text-slate-950">{title}</p>
+        <p className="text-sm leading-6 text-slate-500">{description}</p>
       </div>
       {action ? (
         <Button asChild variant="outline" size="sm" className="rounded-xl">
@@ -210,14 +211,14 @@ function SectionCard({
 }) {
   return (
     <Card
-      className={`rounded-[1.75rem] border border-white/8 bg-[linear-gradient(180deg,rgba(18,16,29,0.96),rgba(12,11,22,0.94))] shadow-[0_18px_50px_-28px_rgba(255,45,120,0.24)] backdrop-blur ${className}`}
+      className={`rounded-[1.75rem] border border-slate-100 bg-white shadow-sm backdrop-blur ${className}`}
     >
       <CardHeader className="flex flex-row items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary">
             <Icon className="size-4" />
           </div>
-          <CardTitle className="truncate text-lg text-white">{title}</CardTitle>
+          <CardTitle className="truncate text-lg text-slate-950">{title}</CardTitle>
         </div>
         {action ? (
           <Button asChild variant="ghost" size="sm" className="shrink-0 rounded-xl">
@@ -245,7 +246,7 @@ function CompactJobCard({
   showSaveAction?: boolean;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-white/8 bg-white/4 p-4 shadow-sm transition hover:border-cyan-400/25 hover:shadow-[0_12px_28px_-22px_rgba(0,255,204,0.28)]">
+    <div className="rounded-[1.5rem] border border-slate-100 bg-white p-4 shadow-sm transition hover:border-cyan-400/25 hover:shadow-[0_12px_28px_-22px_rgba(0,255,204,0.28)]">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -257,8 +258,8 @@ function CompactJobCard({
             </Badge>
           </div>
           <div className="space-y-1">
-            <h3 className="font-semibold text-white">{job.title}</h3>
-            <p className="text-sm text-slate-400">
+            <h3 className="font-semibold text-slate-950">{job.title}</h3>
+            <p className="text-sm text-slate-500">
               {job.companyName} • {formatLocation(job)}
             </p>
           </div>
@@ -344,9 +345,9 @@ export default async function CandidateDashboardPage() {
 
     savedJobs =
       savedJobsResult.data
-        ?.map((item) => item.jobs)
+        ?.map((item: DbRow) => item.jobs)
         .filter(Boolean)
-        .map((job) => dbRowToJob(job as unknown as SupabaseJobRow)) ?? [];
+        .map((job: DbRow) => dbRowToJob(job as unknown as SupabaseJobRow)) ?? [];
 
     resumes = (resumesResult.data as ResumeRow[] | null) ?? [];
     latestAnalysis = (analysisResult.data as ResumeAnalysisRow | null) ?? null;
@@ -403,30 +404,30 @@ export default async function CandidateDashboardPage() {
         <div className="space-y-6">
           <section className="jp-panel overflow-hidden border-[rgba(255,45,120,0.35)] p-5 sm:p-6">
             <div className="flex flex-col gap-5 text-center sm:text-left">
-              <div className="mx-auto flex size-24 items-center justify-center rounded-full border border-[rgba(255,45,120,0.4)] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),rgba(255,45,120,0.12)_55%,rgba(10,9,19,0.7))] text-3xl font-bold text-white shadow-[0_0_30px_rgba(255,45,120,0.18)] sm:mx-0">
+              <div className="mx-auto flex size-24 items-center justify-center rounded-full border border-[rgba(255,45,120,0.4)] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),rgba(255,45,120,0.12)_55%,rgba(255,255,255,0.85))] text-3xl font-bold text-slate-950 shadow-md sm:mx-0">
                 {profileInitials}
               </div>
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <h2 className="font-heading text-3xl font-semibold text-white">
+                  <h2 className="font-heading text-3xl font-semibold text-slate-950">
                     {profile.fullName || "Complete your profile"}
                   </h2>
                   <Badge className="rounded-full">{profileTitle}</Badge>
                 </div>
-                <p className="mx-auto max-w-xl text-sm leading-7 text-slate-300 sm:mx-0">
+                <p className="mx-auto max-w-xl text-sm leading-7 text-slate-600 sm:mx-0">
                   {profile.bio ||
                     "AI-driven job seeker profile optimized for faster discovery, stronger applications, and recruiter-ready positioning across India."}
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-slate-200 sm:justify-start">
+              <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium text-slate-800 sm:justify-start">
                 <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1">
                   {profileLocation}
                 </span>
-                <span className="rounded-full border border-white/10 bg-white/4 px-3 py-1">
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
                   Open to {profile.preferredJobTypes[0] || "Remote"}
                 </span>
-                <span className="rounded-full border border-white/10 bg-white/4 px-3 py-1 text-primary">
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-primary">
                   {profile.verified ? "Premium Member" : titleCase(profile.verificationStatus)}
                 </span>
               </div>
@@ -451,13 +452,13 @@ export default async function CandidateDashboardPage() {
                 <h3 className="font-heading text-2xl font-semibold text-primary jp-neon-text">
                   Application Pipeline
                 </h3>
-                <p className="mt-1 text-sm text-slate-300">
+                <p className="mt-1 text-sm text-slate-600">
                   Track your recruitment progress across {applications.length || 0} active applications.
                 </p>
               </div>
               <div className="text-right text-xs uppercase tracking-[0.18em] text-slate-500">
                 Sort by:
-                <div className="mt-1 text-cyan-300">Recent</div>
+                <div className="mt-1 font-semibold text-primary">Recent</div>
               </div>
             </div>
 
@@ -467,12 +468,12 @@ export default async function CandidateDashboardPage() {
                   <Link
                     key={application.id}
                     href={application.jobs?.slug ? `/jobs/${application.jobs.slug}` : "/dashboard/applications"}
-                    className="jp-panel-soft block border-white/8 p-4 transition hover:border-primary/35"
+                    className="jp-panel-soft block border-slate-100 p-4 transition hover:border-primary/35"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1">
-                        <p className="font-semibold text-white">{application.jobs?.title ?? "Job unavailable"}</p>
-                        <p className="text-sm text-slate-400">
+                        <p className="font-semibold text-slate-950">{application.jobs?.title ?? "Job unavailable"}</p>
+                        <p className="text-sm text-slate-500">
                           {application.jobs?.company_name ?? "Unknown company"}
                           {application.jobs?.city ? ` • ${application.jobs.city}` : ""}
                         </p>
@@ -480,7 +481,7 @@ export default async function CandidateDashboardPage() {
                       <Badge className="rounded-full">{titleCase(application.status)}</Badge>
                     </div>
                     <div className="mt-5 space-y-2">
-                      <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                      <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.18em] text-slate-500">
                         <span>Status: {titleCase(application.status)}</span>
                         <span>
                           {application.status === "offered"
@@ -494,7 +495,7 @@ export default async function CandidateDashboardPage() {
                                   : "20%"}
                         </span>
                       </div>
-                      <div className="h-2 rounded-full bg-white/8">
+                      <div className="h-2 rounded-full bg-white">
                         <div
                           className="h-2 rounded-full bg-[linear-gradient(90deg,#00ffcc,#ff2d78)]"
                           style={{
@@ -527,14 +528,14 @@ export default async function CandidateDashboardPage() {
 
           <section className="space-y-5">
             <div>
-              <h3 className="font-heading text-2xl font-semibold text-white">AI Talent Insights</h3>
+              <h3 className="font-heading text-2xl font-semibold text-slate-950">AI Talent Insights</h3>
             </div>
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="jp-panel p-5">
                 <Badge variant="outline" className="border-primary/35 text-primary">
                   Market snapshot
                 </Badge>
-                <p className="mt-4 text-3xl font-semibold text-white">
+                <p className="mt-4 text-3xl font-semibold text-slate-950">
                   Your profile is at {Math.max(5, 100 - completion)}% readiness.
                 </p>
                 <div className="mt-5 flex items-end justify-between gap-4">
@@ -544,7 +545,7 @@ export default async function CandidateDashboardPage() {
                         key={value + index}
                         className={cn(
                           "w-4 rounded-t-md bg-primary/70",
-                          index === 3 ? "shadow-[0_0_18px_rgba(255,45,120,0.36)]" : "",
+                          index === 3 ? "shadow-md" : "",
                         )}
                         style={{ height: `${value}px` }}
                       />
@@ -561,8 +562,8 @@ export default async function CandidateDashboardPage() {
                 </div>
               </div>
 
-              <div className="rounded-[1.75rem] bg-primary px-5 py-6 text-primary-foreground shadow-[0_0_36px_rgba(255,45,120,0.28)]">
-                <Badge variant="secondary" className="border-white/20 bg-black/20 text-white">
+              <div className="rounded-[1.75rem] bg-primary px-5 py-6 text-primary-foreground shadow-lg">
+                <Badge variant="secondary" className="border-slate-300 bg-black/20 text-white">
                   Skill gap analysis
                 </Badge>
                 <p className="mt-4 text-3xl font-semibold">
@@ -638,10 +639,10 @@ export default async function CandidateDashboardPage() {
                 {applicationsByStatus.map(({ status, count }) => (
                   <div
                     key={status}
-                    className="rounded-[1.25rem] border border-white/8 bg-white/4 px-4 py-3"
+                    className="rounded-[1.25rem] border border-slate-100 bg-white px-4 py-3"
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-slate-200">{titleCase(status)}</p>
+                      <p className="text-sm font-medium text-slate-800">{titleCase(status)}</p>
                       <Badge className="rounded-full">{count === 1 ? "1 role" : `${count} roles`}</Badge>
                     </div>
                   </div>

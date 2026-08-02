@@ -1,4 +1,16 @@
-import { createClient } from "@supabase/supabase-js";
+/**
+ * Clears bad apply/source URLs and prose that leaked into location columns.
+ *
+ *   npm run cleanup:corrupted-jobs
+ *
+ * Rows are scanned in the script rather than filtered in SQL: the same
+ * predicates below decide what to clear, so a single pass keeps the two in
+ * step and avoids duplicating the patterns as LIKE clauses.
+ */
+
+import { connect, createDb, loadEnvFiles } from "./lib/mysql-client.mjs";
+
+loadEnvFiles();
 
 const invalidUrlPatterns = [
   "grok.com",
@@ -25,98 +37,59 @@ function isBadLocation(value) {
   return trimmed.split(/\s+/).length > 5 || proseLocationPatterns.some((pattern) => pattern.test(trimmed));
 }
 
-function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceRoleKey) {
-    throw new Error("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.");
-  }
-
-  return createClient(url, serviceRoleKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
-}
-
-async function cleanupJobs(supabase) {
-  const { data, error } = await supabase
-    .from("jobs")
-    .select("id, slug, title, application_url, source_url, city, state")
-    .or(
-      [
-        ...invalidUrlPatterns.flatMap((pattern) => [
-          `application_url.ilike.%${pattern}%`,
-          `source_url.ilike.%${pattern}%`,
-        ]),
-        "city.ilike.%history, culture, festivals%",
-        "state.ilike.%history, culture, festivals%",
-      ].join(","),
-    );
-
-  if (error) throw error;
+async function cleanupTable(db, { table, urlColumns, locationColumns, columns }) {
+  const { data, error } = await db.from(table).select(columns);
+  if (error) throw new Error(error.message);
 
   let updated = 0;
+
   for (const row of data ?? []) {
     const patch = {};
-    if (isBadUrl(row.application_url)) patch.application_url = null;
-    if (isBadUrl(row.source_url)) patch.source_url = null;
-    if (isBadLocation(row.city)) patch.city = null;
-    if (isBadLocation(row.state)) patch.state = null;
+
+    for (const column of urlColumns) {
+      if (isBadUrl(row[column])) patch[column] = null;
+    }
+    for (const column of locationColumns) {
+      if (isBadLocation(row[column])) patch[column] = null;
+    }
 
     if (Object.keys(patch).length > 0) {
-      const { error: updateError } = await supabase.from("jobs").update(patch).eq("id", row.id);
-      if (updateError) throw updateError;
+      const { error: updateError } = await db.from(table).update(patch).eq("id", row.id);
+      if (updateError) throw new Error(updateError.message);
       updated += 1;
-      console.log(`Cleaned jobs/${row.slug ?? row.id}: ${row.title}`);
+      console.log(`Cleaned ${table}/${row.slug ?? row.id}: ${row.title}`);
     }
   }
 
   return updated;
 }
 
-async function cleanupGovernmentJobs(supabase) {
-  const { data, error } = await supabase
-    .from("government_jobs")
-    .select("id, slug, title, notification_url, official_apply_url, source_url, state")
-    .or(
-      [
-        ...invalidUrlPatterns.flatMap((pattern) => [
-          `notification_url.ilike.%${pattern}%`,
-          `official_apply_url.ilike.%${pattern}%`,
-          `source_url.ilike.%${pattern}%`,
-        ]),
-        "state.ilike.%history, culture, festivals%",
-      ].join(","),
-    );
+async function main() {
+  const connection = await connect();
+  const db = createDb(connection);
 
-  if (error) throw error;
+  try {
+    const jobsUpdated = await cleanupTable(db, {
+      table: "jobs",
+      columns: "id, slug, title, application_url, source_url, city, state",
+      urlColumns: ["application_url", "source_url"],
+      locationColumns: ["city", "state"],
+    });
 
-  let updated = 0;
-  for (const row of data ?? []) {
-    const patch = {};
-    if (isBadUrl(row.notification_url)) patch.notification_url = null;
-    if (isBadUrl(row.official_apply_url)) patch.official_apply_url = null;
-    if (isBadUrl(row.source_url)) patch.source_url = null;
-    if (isBadLocation(row.state)) patch.state = null;
+    const governmentJobsUpdated = await cleanupTable(db, {
+      table: "government_jobs",
+      columns: "id, slug, title, notification_url, official_apply_url, source_url, state",
+      urlColumns: ["notification_url", "official_apply_url", "source_url"],
+      locationColumns: ["state"],
+    });
 
-    if (Object.keys(patch).length > 0) {
-      const { error: updateError } = await supabase.from("government_jobs").update(patch).eq("id", row.id);
-      if (updateError) throw updateError;
-      updated += 1;
-      console.log(`Cleaned government_jobs/${row.slug ?? row.id}: ${row.title}`);
-    }
+    console.log(`Done. Updated ${jobsUpdated} jobs and ${governmentJobsUpdated} government jobs.`);
+  } finally {
+    await connection.end();
   }
-
-  return updated;
 }
 
-const supabase = getSupabase();
-const [jobsUpdated, governmentJobsUpdated] = await Promise.all([
-  cleanupJobs(supabase),
-  cleanupGovernmentJobs(supabase),
-]);
-
-console.log(`Done. Updated ${jobsUpdated} jobs and ${governmentJobsUpdated} government jobs.`);
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(1);
+});

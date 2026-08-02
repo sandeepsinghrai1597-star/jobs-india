@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PostgrestError } from "@supabase/supabase-js";
+import type { DbError } from "@/lib/db/mysql";
 import { recordAnalyticsEvent } from "@/lib/analytics/server";
 import { isCandidateVerified, mapCandidateProfileRow } from "@/lib/candidate/profile";
 import { ensurePersistedJobByIdentifier } from "@/lib/jobs/persistence";
@@ -132,9 +132,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   } as never);
 
   if (error) {
-    const postgrestError = error as PostgrestError;
+    // The adapter maps MySQL's ER_DUP_ENTRY onto 23505, so this still
+    // detects a repeat application against the unique (job, candidate) index.
+    const duplicateError = error as DbError;
 
-    if (postgrestError.code === "23505") {
+    if (duplicateError.code === "23505") {
       return NextResponse.json({
         ok: true,
         alreadyApplied: true,

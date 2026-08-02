@@ -41,7 +41,7 @@ export function PersonalizedJobMatch({ jobId }: { jobId: string }) {
   return (
     <div className="space-y-4 rounded-2xl border border-sky-200 bg-sky-50 p-5 text-slate-800">
       <div className="flex flex-wrap items-center gap-3">
-        <Badge className="rounded-full bg-sky-600 text-white">
+        <Badge className="rounded-full bg-sky-600 text-slate-950">
           <Sparkles className="size-3.5" />
           {currentMatchSummary.matchScore}% match
         </Badge>
@@ -51,7 +51,7 @@ export function PersonalizedJobMatch({ jobId }: { jobId: string }) {
       </div>
       <p className="text-sm leading-6">{currentMatchSummary.reason}</p>
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-2xl bg-white/70 p-4">
+        <div className="rounded-2xl bg-white p-4">
           <p className="text-sm font-semibold text-slate-950">Matching skills</p>
           <p className="mt-2 text-sm leading-6">
             {currentMatchSummary.matchingSkills.length > 0
@@ -59,7 +59,7 @@ export function PersonalizedJobMatch({ jobId }: { jobId: string }) {
               : "No direct skill overlap detected yet."}
           </p>
         </div>
-        <div className="rounded-2xl bg-white/70 p-4">
+        <div className="rounded-2xl bg-white p-4">
           <p className="text-sm font-semibold text-slate-950">Missing skills</p>
           <p className="mt-2 text-sm leading-6">
             {currentMatchSummary.missingSkills.length > 0

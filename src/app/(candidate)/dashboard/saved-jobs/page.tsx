@@ -4,6 +4,7 @@ import { getJobInteractionState } from "@/lib/jobs/interactions";
 import { dbRowToJob, type SupabaseJobRow } from "@/lib/jobs/live";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
+import type { DbRow } from "@/lib/db/mysql";
 
 export default async function CandidateSavedJobsPage() {
   const supabase = await createClient();
@@ -24,9 +25,9 @@ export default async function CandidateSavedJobsPage() {
 
     savedJobs =
       data
-        ?.map((item) => item.jobs)
+        ?.map((item: DbRow) => item.jobs)
         .filter(Boolean)
-        .map((job) => dbRowToJob(job as unknown as SupabaseJobRow)) ?? [];
+        .map((job: DbRow) => dbRowToJob(job as unknown as SupabaseJobRow)) ?? [];
   }
 
   const interactions = await getJobInteractionState(savedJobs.map((job) => job.id));
@@ -50,7 +51,7 @@ export default async function CandidateSavedJobsPage() {
           ))}
         </div>
       ) : (
-        <Card className="rounded-[1.75rem] border-white/10 bg-slate-950/70 backdrop-blur">
+        <Card className="rounded-[1.75rem] border-slate-200 bg-slate-100 backdrop-blur">
           <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
             You have not saved any jobs yet. Browse jobs and save strong matches to build your
             shortlist.

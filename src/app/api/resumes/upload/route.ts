@@ -5,8 +5,8 @@ import {
   isAllowedResumeMimeType,
   isSafeResumeFileName,
   MAX_RESUME_FILE_SIZE_BYTES,
-  RESUME_BUCKET,
 } from "@/lib/resumes/storage";
+import { saveResumeFile } from "@/lib/resumes/file-store";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
@@ -52,12 +52,13 @@ export async function POST(request: Request) {
   }
 
   const filePath = buildResumeStoragePath(user.id, file.name);
-  const { error: uploadError } = await supabase.storage
-    .from(RESUME_BUCKET)
-    .upload(filePath, file, {
-      contentType: file.type,
-      upsert: false,
-    });
+  const { error: uploadError } = await saveResumeFile({
+    storagePath: filePath,
+    userId: user.id,
+    fileName: file.name,
+    contentType: file.type,
+    content: Buffer.from(await file.arrayBuffer()),
+  });
 
   if (uploadError) {
     return NextResponse.json(

@@ -18,6 +18,7 @@ import { buildTrustedSourcePackRows, TRUSTED_SOURCE_PACK } from "@/lib/jobs/trus
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { runSingleJobFetch } from "@/server/job-fetcher/scheduler";
+import type { DbRow } from "@/lib/db/mysql";
 
 async function getMutationClient() {
   return getSupabaseAdminClient() ?? (await createClient());
@@ -603,7 +604,7 @@ export async function runPunjabJobSourcesAction(formData: FormData) {
     .order("updated_at", { ascending: false });
 
   const punjabSourceIds = (data ?? [])
-    .filter((source) => {
+    .filter((source: DbRow) => {
       const config = parseJobSourceConfig({
         sourceType: source.source_type,
         transportType: source.transport_type,
@@ -612,7 +613,7 @@ export async function runPunjabJobSourcesAction(formData: FormData) {
 
       return config.coverageRegion === "punjab";
     })
-    .map((source) => source.id);
+    .map((source: DbRow) => source.id);
 
   for (const sourceId of punjabSourceIds) {
     try {

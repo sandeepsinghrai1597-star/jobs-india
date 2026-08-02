@@ -1,110 +1,51 @@
-import { createClient } from "@supabase/supabase-js";
+/**
+ * Creates a throwaway verified candidate (user + profile + resume row) used to
+ * exercise the apply flow against a live deployment.
+ *
+ *   node scripts/seed-production-verification-candidate.mjs [email] [password]
+ */
+
 import crypto from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
+import bcrypt from "bcryptjs";
+import { connect, createDb, loadEnvFiles, randomUUID } from "./lib/mysql-client.mjs";
 
-const projectRoot = process.cwd();
-
-loadEnvFile(".env.local");
-loadEnvFile(".env");
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !serviceRoleKey) {
-  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.");
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, serviceRoleKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-});
+loadEnvFiles([".env.local", ".env"]);
 
 const email = process.argv[2]?.trim().toLowerCase() || "candidate.verify@jobpulse.test";
 const password = process.argv[3]?.trim() || `JobPulse!${crypto.randomBytes(9).toString("base64url")}`;
 
-function loadEnvFile(fileName) {
-  const filePath = path.join(projectRoot, fileName);
-  if (!fs.existsSync(filePath)) return;
+async function ensureCandidateUser(db, targetEmail, targetPassword) {
+  const { data: existing, error: lookupError } = await db
+    .from("users")
+    .select("id")
+    .eq("email", targetEmail)
+    .maybeSingle();
 
-  const content = fs.readFileSync(filePath, "utf8");
-  for (const rawLine of content.split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const separator = line.indexOf("=");
-    if (separator === -1) continue;
-    const key = line.slice(0, separator).trim();
-    const value = line.slice(separator + 1).trim().replace(/^['"]|['"]$/g, "");
-    if (!(key in process.env)) {
-      process.env[key] = value;
-    }
+  if (lookupError) throw new Error(lookupError.message);
+
+  const fields = {
+    name: "Verification Candidate",
+    phone: "+91 9999999999",
+    role: "candidate",
+    password_hash: await bcrypt.hash(targetPassword, 10),
+    email_verified: true,
+    is_banned: false,
+    app_metadata: { role: "candidate" },
+  };
+
+  if (existing) {
+    const { error } = await db.from("users").update(fields).eq("id", existing.id);
+    if (error) throw new Error(`Could not update ${targetEmail}: ${error.message}`);
+    return existing.id;
   }
+
+  const id = randomUUID();
+  const { error } = await db.from("users").insert({ id, email: targetEmail, ...fields });
+  if (error) throw new Error(`Could not create ${targetEmail}: ${error.message}`);
+  return id;
 }
 
-async function listAllUsers() {
-  const users = [];
-  let page = 1;
-
-  for (;;) {
-    const listed = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
-    if (listed.error) throw listed.error;
-    const batch = listed.data.users ?? [];
-    users.push(...batch);
-    if (batch.length < 1000) return users;
-    page += 1;
-  }
-}
-
-async function ensureCandidateAuthUser(targetEmail, targetPassword) {
-  const users = await listAllUsers();
-  const existing = users.find((entry) => entry.email?.toLowerCase() === targetEmail);
-
-  if (!existing) {
-    const created = await supabase.auth.admin.createUser({
-      email: targetEmail,
-      password: targetPassword,
-      email_confirm: true,
-      user_metadata: {
-        full_name: "Verification Candidate",
-        role: "candidate",
-      },
-      app_metadata: {
-        role: "candidate",
-      },
-    });
-
-    if (created.error || !created.data.user?.id) {
-      throw created.error ?? new Error(`Could not create ${targetEmail}`);
-    }
-
-    return created.data.user.id;
-  }
-
-  const updated = await supabase.auth.admin.updateUserById(existing.id, {
-    password: targetPassword,
-    email_confirm: true,
-    user_metadata: {
-      ...(existing.user_metadata ?? {}),
-      full_name: "Verification Candidate",
-      role: "candidate",
-    },
-    app_metadata: {
-      ...(existing.app_metadata ?? {}),
-      role: "candidate",
-    },
-  });
-
-  if (updated.error || !updated.data.user?.id) {
-    throw updated.error ?? new Error(`Could not update ${targetEmail}`);
-  }
-
-  return updated.data.user.id;
-}
-
-async function ensureCandidateProfile(userId) {
+async function ensureCandidateProfile(db, userId) {
   const payload = {
     user_id: userId,
     full_name: "Verification Candidate",
@@ -126,24 +67,32 @@ async function ensureCandidateProfile(userId) {
     verified_at: new Date().toISOString(),
   };
 
-  const { data, error } = await supabase
+  const { data: existing, error: lookupError } = await db
     .from("candidate_profiles")
-    .upsert(payload, { onConflict: "user_id" })
     .select("id")
-    .single();
+    .eq("user_id", userId)
+    .maybeSingle();
 
-  if (error || !data?.id) {
-    throw error ?? new Error("Could not upsert candidate profile.");
+  if (lookupError) throw new Error(lookupError.message);
+
+  if (existing) {
+    const { error } = await db.from("candidate_profiles").update(payload).eq("id", existing.id);
+    if (error) throw new Error(`Could not update candidate profile: ${error.message}`);
+    return existing.id;
   }
 
-  return data.id;
+  const id = randomUUID();
+  const { error } = await db.from("candidate_profiles").insert({ id, ...payload });
+  if (error) throw new Error(`Could not create candidate profile: ${error.message}`);
+  return id;
 }
 
-async function ensureResume(userId) {
+async function ensureResume(db, userId) {
+  const title = "Verification Resume";
   const storagePath = `resumes/${userId}/verification-resume.pdf`;
   const payload = {
     user_id: userId,
-    title: "Verification Resume",
+    title,
     storage_path: storagePath,
     file_url: null,
     template_key: "verification",
@@ -154,49 +103,58 @@ async function ensureResume(userId) {
     },
   };
 
-  const { data, error } = await supabase
+  // resumes has no unique (user_id, title) constraint, so this matches the
+  // existing row explicitly rather than relying on upsert conflict handling.
+  const { data: existing, error: lookupError } = await db
     .from("resumes")
-    .upsert(payload, { onConflict: "user_id,title" })
-    .select("id, storage_path")
-    .single();
+    .select("id")
+    .eq("user_id", userId)
+    .eq("title", title)
+    .maybeSingle();
 
-  if (error || !data?.id) {
-    throw error ?? new Error("Could not upsert verification resume.");
+  if (lookupError) throw new Error(lookupError.message);
+
+  if (existing) {
+    const { error } = await db.from("resumes").update(payload).eq("id", existing.id);
+    if (error) throw new Error(`Could not update verification resume: ${error.message}`);
+    return { id: existing.id, storage_path: storagePath };
   }
 
-  return data;
+  const id = randomUUID();
+  const { error } = await db.from("resumes").insert({ id, ...payload });
+  if (error) throw new Error(`Could not create verification resume: ${error.message}`);
+  return { id, storage_path: storagePath };
 }
 
 async function main() {
-  const userId = await ensureCandidateAuthUser(email, password);
-  const profileId = await ensureCandidateProfile(userId);
-  const resume = await ensureResume(userId);
+  const connection = await connect();
+  const db = createDb(connection);
 
-  console.log(
-    JSON.stringify(
-      {
-        email,
-        password,
-        userId,
-        profileId,
-        resumeId: resume.id,
-        storagePath: resume.storage_path,
-      },
-      null,
-      2,
-    ),
-  );
+  try {
+    const userId = await ensureCandidateUser(db, email, password);
+    const profileId = await ensureCandidateProfile(db, userId);
+    const resume = await ensureResume(db, userId);
+
+    console.log(
+      JSON.stringify(
+        {
+          email,
+          password,
+          userId,
+          profileId,
+          resumeId: resume.id,
+          storagePath: resume.storage_path,
+        },
+        null,
+        2,
+      ),
+    );
+  } finally {
+    await connection.end();
+  }
 }
 
 main().catch((error) => {
-  if (error instanceof Error) {
-    console.error(error.message);
-  } else {
-    try {
-      console.error(JSON.stringify(error, null, 2));
-    } catch {
-      console.error(String(error));
-    }
-  }
+  console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 });

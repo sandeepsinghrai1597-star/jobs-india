@@ -1,72 +1,35 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { getRoleFromAuthMetadata, getRoleHome } from "@/lib/auth/auth-errors";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth/session-token";
+import { getRoleHome } from "@/lib/auth/auth-errors";
 
+/**
+ * Route protection for the middleware. The session JWT carries the user's
+ * role, so authorization needs no database round-trip — which matters
+ * because middleware runs on the Edge runtime and cannot open a MySQL
+ * connection. Role changes take effect on the user's next sign-in.
+ */
 export async function updateSession(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.next({ request });
-  }
-
-  let response = NextResponse.next({
-    request,
-  });
-
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
-
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
-          );
-        },
-      },
-    },
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const response = NextResponse.next({ request });
 
   const pathname = request.nextUrl.pathname;
   const isCandidateRoute = pathname.startsWith("/dashboard");
   const isEmployerRoute = pathname.startsWith("/employer");
   const isAdminRoute = pathname.startsWith("/admin");
-  const isProtectedRoute = isCandidateRoute || isEmployerRoute || isAdminRoute;
 
-  if (!isProtectedRoute) {
+  if (!isCandidateRoute && !isEmployerRoute && !isAdminRoute) {
     return response;
   }
 
-  if (!user) {
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  const session = token ? await verifySessionToken(token) : null;
+
+  if (!session) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  const { data: currentUser } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const role =
-    currentUser?.role ??
-    getRoleFromAuthMetadata(user.app_metadata?.role, undefined);
+  const role = session.role;
 
   if (
     (isCandidateRoute && role !== "candidate") ||

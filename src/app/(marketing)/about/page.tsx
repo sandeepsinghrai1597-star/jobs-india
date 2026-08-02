@@ -116,21 +116,21 @@ export default function AboutPage() {
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
 
         {/* Hero */}
-        <section className="rounded-[2rem] border border-white/10 bg-white/5 p-8 sm:p-12">
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-8 sm:p-12">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">About us</p>
-          <h1 className="mt-3 font-heading text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+          <h1 className="mt-3 font-heading text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
             India&apos;s AI Career Companion
           </h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
+          <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">
             JobPulse India is an AI-powered career platform built for Indian students, freshers, and job seekers
             who need more than a job board. We combine job discovery, resume tools, interview preparation, and an
             AI career agent into one mobile-first platform — so every candidate can move from search to shortlist faster.
           </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                <p className="text-3xl font-bold text-cyan-300">{stat.value}</p>
-                <p className="mt-1 text-sm text-slate-400">{stat.label}</p>
+              <div key={stat.label} className="rounded-2xl border border-slate-200 bg-white p-5">
+                <p className="text-3xl font-bold text-primary">{stat.value}</p>
+                <p className="mt-1 text-sm text-slate-500">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -138,13 +138,13 @@ export default function AboutPage() {
 
         {/* Mission */}
         <section className="mt-10">
-          <h2 className="font-heading text-2xl font-semibold text-white">Our mission</h2>
-          <p className="mt-4 leading-7 text-slate-300">
+          <h2 className="font-heading text-2xl font-semibold text-slate-950">Our mission</h2>
+          <p className="mt-4 leading-7 text-slate-600">
             Most job boards in India show listings and stop there. JobPulse India exists to fill the gap between
             discovery and employment — giving every candidate the tools they need to apply confidently, prepare
             thoroughly, and land roles that match their skills and goals.
           </p>
-          <p className="mt-4 leading-7 text-slate-300">
+          <p className="mt-4 leading-7 text-slate-600">
             We focus specifically on the Indian job market: government exams, fresher roles, regional hiring, and
             the real career challenges that students from tier-2 and tier-3 cities face every day.
           </p>
@@ -152,14 +152,14 @@ export default function AboutPage() {
 
         {/* Who we serve */}
         <section className="mt-10">
-          <h2 className="font-heading text-2xl font-semibold text-white">Who we serve</h2>
+          <h2 className="font-heading text-2xl font-semibold text-slate-950">Who we serve</h2>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {whoWeServe.map((item) => {
               const Icon = item.icon;
               return (
-                <div key={item.label} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/4 px-4 py-4">
+                <div key={item.label} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4">
                   <Icon className="size-5 shrink-0 text-primary" />
-                  <p className="text-sm font-medium text-slate-200">{item.label}</p>
+                  <p className="text-sm font-medium text-slate-800">{item.label}</p>
                 </div>
               );
             })}
@@ -168,15 +168,15 @@ export default function AboutPage() {
 
         {/* Features */}
         <section className="mt-10">
-          <h2 className="font-heading text-2xl font-semibold text-white">What&apos;s inside the platform</h2>
+          <h2 className="font-heading text-2xl font-semibold text-slate-950">What&apos;s inside the platform</h2>
           <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => {
               const Icon = feature.icon;
               return (
-                <div key={feature.title} className="rounded-[1.5rem] border border-white/8 bg-white/4 p-5">
+                <div key={feature.title} className="rounded-[1.5rem] border border-slate-100 bg-white p-5">
                   <Icon className="size-5 text-primary" />
-                  <p className="mt-3 font-semibold text-white">{feature.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">{feature.description}</p>
+                  <p className="mt-3 font-semibold text-slate-950">{feature.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">{feature.description}</p>
                 </div>
               );
             })}
@@ -185,21 +185,21 @@ export default function AboutPage() {
 
         {/* FAQ */}
         <section className="mt-12">
-          <h2 className="font-heading text-2xl font-semibold text-white">Frequently asked questions</h2>
+          <h2 className="font-heading text-2xl font-semibold text-slate-950">Frequently asked questions</h2>
           <div className="mt-6 space-y-5">
             {faqs.map((faq) => (
-              <div key={faq.question} className="rounded-2xl border border-white/8 bg-white/4 p-6">
-                <p className="font-semibold text-white">{faq.question}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{faq.answer}</p>
+              <div key={faq.question} className="rounded-2xl border border-slate-100 bg-white p-6">
+                <p className="font-semibold text-slate-950">{faq.question}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{faq.answer}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* Contact CTA */}
-        <section className="mt-12 rounded-[2rem] border border-white/8 bg-[linear-gradient(135deg,rgba(255,45,120,0.12),rgba(12,11,22,0.94)_55%,rgba(0,255,204,0.06))] p-8 text-center">
-          <h2 className="font-heading text-2xl font-semibold text-white">Get in touch</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-300">
+        <section className="mt-12 rounded-[2rem] border border-slate-100 bg-[linear-gradient(135deg,rgba(255,45,120,0.12),rgba(255,255,255,0.96)_55%,rgba(0,255,204,0.06))] p-8 text-center">
+          <h2 className="font-heading text-2xl font-semibold text-slate-950">Get in touch</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
             For support, employer onboarding, content partnerships, or platform feedback — reach us at{" "}
             <a href="mailto:support@jobpulseindia.in" className="font-semibold text-primary hover:underline">
               support@jobpulseindia.in

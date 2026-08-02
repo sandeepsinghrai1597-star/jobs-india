@@ -25,6 +25,7 @@ import {
 import { TRUSTED_SOURCE_PACK } from "@/lib/jobs/trusted-source-pack";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import type { DbRow } from "@/lib/db/mysql";
 
 async function getClient() {
   return getSupabaseAdminClient() ?? (await createClient());
@@ -89,7 +90,7 @@ export async function AdminJobSourcesPage() {
       description="Manage approved job sources, tune fetch cadence, inspect run history, and keep ingestion quality visible before anything reaches the public jobs feed."
     >
       <div className="space-y-6">
-        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
           <CardHeader className="border-b border-slate-200/80 bg-[linear-gradient(135deg,rgba(14,165,233,0.08),rgba(59,130,246,0.03)_60%,rgba(255,255,255,0.96)_100%)]">
             <CardTitle>Add a source</CardTitle>
             <CardDescription>
@@ -173,7 +174,7 @@ export async function AdminJobSourcesPage() {
                 <input type="checkbox" name="allowAutoFetch" value="true" defaultChecked className="size-4 rounded border-slate-300" />
                 Enable auto fetch
               </label>
-              <Button type="submit" className="h-11 rounded-2xl bg-slate-950 text-white hover:bg-slate-800 md:col-span-2 xl:col-span-4">
+              <Button type="submit" className="h-11 rounded-2xl bg-slate-100 text-slate-950 hover:bg-slate-800 md:col-span-2 xl:col-span-4">
                 Save source
               </Button>
             </form>
@@ -215,7 +216,7 @@ export async function AdminJobSourcesPage() {
         </Card>
 
         <div className="grid gap-6 xl:grid-cols-[1.45fr_0.55fr]">
-          <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+          <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
             <CardHeader>
               <CardTitle>Registered sources</CardTitle>
               <CardDescription>Each source shows fetch cadence, latest health, and review funnel output.</CardDescription>
@@ -226,7 +227,7 @@ export async function AdminJobSourcesPage() {
                   No sources added yet.
                 </div>
               ) : (
-                (sources ?? []).map((source) => {
+                (sources ?? []).map((source: DbRow) => {
                   const config = parseJobSourceConfig({
                     sourceType: source.source_type,
                     transportType: source.transport_type,
@@ -418,7 +419,7 @@ export async function AdminJobSourcesPage() {
                               <input type="checkbox" name="allowAutoFetch" value="true" defaultChecked={source.allow_auto_fetch} className="size-4 rounded border-slate-300" />
                               Enable auto fetch
                             </label>
-                            <Button type="submit" className="h-11 rounded-2xl bg-slate-950 text-white hover:bg-slate-800 md:col-span-2 xl:col-span-4">
+                            <Button type="submit" className="h-11 rounded-2xl bg-slate-100 text-slate-950 hover:bg-slate-800 md:col-span-2 xl:col-span-4">
                               Save changes
                             </Button>
                           </form>
@@ -472,7 +473,7 @@ export async function AdminJobSourcesPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+          <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
             <CardHeader>
               <CardTitle>Pipeline rules</CardTitle>
               <CardDescription>The ingestion flow stays review-first, traceable, and policy-safe.</CardDescription>

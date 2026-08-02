@@ -78,7 +78,7 @@ export default async function CareerGuidePage({
         <Card className="rounded-[2rem] border border-slate-200 bg-white shadow-sm">
           <CardContent className="space-y-6 p-6 sm:p-8">
             <div className="space-y-4">
-              <Badge className="rounded-full bg-sky-600 px-3 py-1 text-white">
+              <Badge className="rounded-full bg-sky-600 px-3 py-1 text-slate-950">
                 {guide.targetRole}
               </Badge>
               <div className="space-y-3">
@@ -105,17 +105,17 @@ export default async function CareerGuidePage({
           </CardContent>
         </Card>
 
-        <Card className="rounded-[2rem] border border-slate-200 bg-slate-950 text-white shadow-sm">
+        <Card className="rounded-[2rem] border border-slate-200 bg-slate-100 text-slate-950 shadow-sm">
           <CardContent className="space-y-5 p-6 sm:p-8">
             <div className="space-y-2">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-sky-300">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
                 Skills required
               </p>
               <h2 className="font-heading text-2xl font-semibold">Core stack to focus on</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               {guide.skills.map((skill) => (
-                <Badge key={skill} variant="outline" className="rounded-full border-white/20 text-white">
+                <Badge key={skill} variant="outline" className="rounded-full border-slate-300 text-slate-950">
                   {skill}
                 </Badge>
               ))}

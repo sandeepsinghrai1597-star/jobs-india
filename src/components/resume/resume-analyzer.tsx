@@ -22,9 +22,9 @@ import type { ResumeAnalysisResult } from "@/lib/resume/analyzer";
 const panelClass =
   "rounded-[24px] border border-slate-200 bg-white shadow-[0_4px_6px_-1px_rgb(0_0_0_/_0.05)]";
 const inputClass =
-  "h-11 rounded-md border-slate-200 bg-white text-slate-900 shadow-none placeholder:text-slate-400 focus-visible:border-blue-600 focus-visible:ring-4 focus-visible:ring-blue-100";
+  "h-11 rounded-md border-slate-200 bg-white text-slate-900 shadow-none placeholder:text-slate-500 focus-visible:border-blue-600 focus-visible:ring-4 focus-visible:ring-blue-100";
 const textareaClass =
-  "rounded-md border-slate-200 bg-white text-slate-900 shadow-none placeholder:text-slate-400 focus-visible:border-blue-600 focus-visible:ring-4 focus-visible:ring-blue-100";
+  "rounded-md border-slate-200 bg-white text-slate-900 shadow-none placeholder:text-slate-500 focus-visible:border-blue-600 focus-visible:ring-4 focus-visible:ring-blue-100";
 
 const sampleResumeName = "sample-resume.pdf";
 const sampleResumeText = `Aarav Sharma

@@ -98,7 +98,7 @@ export default async function AdminJobPreviewPage({
           ) : null}
         </div>
 
-        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
           <CardHeader className="border-b border-slate-200/80">
             <div className="flex flex-wrap items-center gap-2">
               <CardTitle className="text-2xl text-slate-950">{job.title}</CardTitle>

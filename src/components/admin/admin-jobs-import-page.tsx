@@ -58,7 +58,7 @@ function PreviewButton() {
   const { pending } = useFormStatus();
 
   return (
-    <Button type="submit" disabled={pending} className="rounded-2xl bg-slate-950 px-5 text-white hover:bg-slate-800">
+    <Button type="submit" disabled={pending} className="rounded-2xl bg-slate-100 px-5 text-slate-950 hover:bg-slate-800">
       <Upload className="size-4" />
       {pending ? "Validating CSV..." : "Validate and preview"}
     </Button>
@@ -123,7 +123,7 @@ export function AdminJobsImportPage() {
         </Button>
       </div>
 
-      <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+      <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
         <CardHeader className="border-b border-slate-200 bg-[linear-gradient(135deg,rgba(14,165,233,0.1),rgba(255,255,255,0.96))]">
           <CardTitle className="flex items-center gap-2">
             <FileSpreadsheet className="size-5 text-sky-700" />
@@ -184,7 +184,7 @@ export function AdminJobsImportPage() {
       </Card>
 
       {previewState.summary ? (
-        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
           <CardHeader className="border-b border-slate-200 bg-slate-50">
             <CardTitle>Import summary</CardTitle>
             <CardDescription>
@@ -225,7 +225,7 @@ export function AdminJobsImportPage() {
       ) : null}
 
       {previewState.rows && previewState.rows.length > 0 ? (
-        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
           <CardHeader className="border-b border-slate-200 bg-slate-50">
             <CardTitle>Preview first {previewState.rows.length} rows</CardTitle>
             <CardDescription>

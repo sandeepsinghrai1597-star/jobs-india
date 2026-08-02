@@ -36,7 +36,7 @@ export default async function PaymentSuccessPage({ searchParams }: PaymentSucces
             </p>
           </div>
 
-          <div className="grid gap-4 rounded-3xl border border-emerald-100 bg-white/85 p-5 text-sm text-slate-700 sm:grid-cols-3">
+          <div className="grid gap-4 rounded-3xl border border-emerald-100 bg-white p-5 text-sm text-slate-700 sm:grid-cols-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Plan</p>
               <p className="mt-2 font-medium text-slate-900">{params.plan ?? "Paid plan"}</p>

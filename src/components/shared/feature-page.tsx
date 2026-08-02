@@ -29,9 +29,9 @@ export function FeaturePage({
   return (
     <div className="space-y-14">
       <section className="mx-auto w-full max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
-        <div className="grid gap-8 rounded-[2rem] bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-700 px-6 py-12 text-white shadow-2xl shadow-cyan-900/10 md:grid-cols-[1.1fr_0.9fr] md:px-10">
+        <div className="grid gap-8 rounded-[2rem] bg-gradient-to-br from-blue-950 via-blue-900 to-cyan-700 px-6 py-12 text-white shadow-2xl shadow-cyan-900/10 md:grid-cols-[1.1fr_0.9fr] md:px-10">
           <div className="space-y-6">
-            <Badge className="w-fit rounded-full bg-white/15 px-4 py-1 text-white hover:bg-white/15">
+            <Badge className="w-fit rounded-full bg-white px-4 py-1 text-slate-950 hover:bg-slate-100">
               {eyebrow}
             </Badge>
             <div className="space-y-4">
@@ -56,7 +56,7 @@ export function FeaturePage({
               ) : null}
             </div>
           </div>
-          <Card className="rounded-[1.75rem] border-white/15 bg-white/10 text-white backdrop-blur">
+          <Card className="rounded-[1.75rem] border-white/20 bg-white/10 text-white backdrop-blur">
             <CardContent className="space-y-4 p-6">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-100">
                 Included in this module

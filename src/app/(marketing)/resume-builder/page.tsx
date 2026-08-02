@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { getResumeTemplate } from "@/lib/resume/templates";
 import { buildMetadata } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
+import type { DbRow } from "@/lib/db/mysql";
 
 export const metadata = buildMetadata({
   title: "Resume Builder | Build ATS-Ready Resumes Free — JobPulse India",
@@ -47,7 +48,7 @@ export default async function ResumeBuilderPage() {
         .limit(8);
 
       initialSavedResumes =
-        data?.map((item) => ({
+        data?.map((item: DbRow) => ({
           id: item.id,
           title: item.title,
           templateKey: (item.template_key ?? "fresher") as

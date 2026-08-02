@@ -210,10 +210,10 @@ export default async function BlogDetailPage({
             </CardContent>
           </Card>
 
-          <Card className="rounded-[1.75rem] border-slate-200 bg-slate-950 text-white shadow-sm">
+          <Card className="rounded-[1.75rem] border-slate-200 bg-slate-100 text-slate-950 shadow-sm">
             <CardContent className="space-y-3 p-6">
               <h2 className="font-heading text-xl font-semibold">Need a personal plan?</h2>
-              <p className="text-sm leading-6 text-slate-300">
+              <p className="text-sm leading-6 text-slate-600">
                 Use the AI career agent to turn this article into a role-specific action plan.
               </p>
               <Link

@@ -108,19 +108,19 @@ export function JobCard({
     : `/login?next=${encodeURIComponent(`${detailHref}?apply=1`)}`;
 
   return (
-    <Card className="rounded-[1.75rem] border-white/8 bg-[linear-gradient(180deg,rgba(18,16,29,0.96),rgba(12,11,22,0.94))] shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10">
+    <Card className="rounded-[1.75rem] border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10">
       <CardHeader className="gap-5 pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               {job.featured ? (
-                <Badge className="rounded-full bg-amber-500 text-white">
+                <Badge className="rounded-full bg-amber-500 text-slate-950">
                   <Sparkles className="size-3.5" />
                   Featured
                 </Badge>
               ) : null}
               {matchSummary ? (
-                <Badge className="rounded-full bg-sky-600 text-white">
+                <Badge className="rounded-full bg-sky-600 text-slate-950">
                   <Sparkles className="size-3.5" />
                   AI Match {matchSummary.matchScore}%
                 </Badge>
@@ -143,12 +143,12 @@ export function JobCard({
             </div>
 
             <div className="space-y-2">
-              <CardTitle className="text-xl text-white">
+              <CardTitle className="text-xl text-slate-950">
                 <Link href={detailHref} className="hover:text-primary">
                   {job.title}
                 </Link>
               </CardTitle>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-400">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
                 <p className="flex items-center gap-2">
                   <Building2 className="size-4" />
                   {job.companyName}
@@ -161,31 +161,31 @@ export function JobCard({
             </div>
           </div>
 
-          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white/6 text-sm font-semibold text-slate-200">
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-white text-sm font-semibold text-slate-800">
             {job.companyLogo}
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-5">
-        <div className="grid gap-3 text-sm text-slate-300 sm:grid-cols-2 xl:grid-cols-3">
-          <p className="flex items-center gap-2 rounded-2xl bg-white/4 px-3 py-2">
+        <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2 xl:grid-cols-3">
+          <p className="flex items-center gap-2 rounded-2xl bg-white px-3 py-2">
             <Wallet className="size-4 text-slate-500" />
             {formatSalary(job)}
           </p>
-          <p className="flex items-center gap-2 rounded-2xl bg-white/4 px-3 py-2">
+          <p className="flex items-center gap-2 rounded-2xl bg-white px-3 py-2">
             <BriefcaseBusiness className="size-4 text-slate-500" />
             {job.experienceRequired}
           </p>
-          <p className="flex items-center gap-2 rounded-2xl bg-white/4 px-3 py-2">
+          <p className="flex items-center gap-2 rounded-2xl bg-white px-3 py-2">
             <GraduationCap className="size-4 text-slate-500" />
             {job.educationRequired}
           </p>
-          <p className="flex items-center gap-2 rounded-2xl bg-white/4 px-3 py-2">
+          <p className="flex items-center gap-2 rounded-2xl bg-white px-3 py-2">
             <CalendarClock className="size-4 text-slate-500" />
             {formatPostedDate(job)}
           </p>
-          <p className="flex items-center gap-2 rounded-2xl bg-white/4 px-3 py-2 sm:col-span-2 xl:col-span-2">
+          <p className="flex items-center gap-2 rounded-2xl bg-white px-3 py-2 sm:col-span-2 xl:col-span-2">
             <CalendarClock className="size-4 text-slate-500" />
             Deadline: {formatDate(job.applicationDeadline)}
             {(() => {
@@ -199,7 +199,7 @@ export function JobCard({
           </p>
         </div>
 
-        <p className="line-clamp-3 text-sm leading-6 text-slate-300">{job.description}</p>
+        <p className="line-clamp-3 text-sm leading-6 text-slate-600">{job.description}</p>
 
         <div className="flex flex-wrap gap-2">
           {job.skills.slice(0, 8).map((skill) => (
@@ -210,7 +210,7 @@ export function JobCard({
         </div>
       </CardContent>
 
-      <CardFooter className="flex flex-col gap-3 border-t border-white/8 bg-white/4 sm:flex-row sm:items-center sm:justify-between">
+      <CardFooter className="flex flex-col gap-3 border-t border-slate-100 bg-white sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
           {job.sourceName ? <span>Source: {job.sourceName}</span> : null}
           {job.sourceName && job.officialVerified ? <span>•</span> : null}

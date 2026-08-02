@@ -86,16 +86,18 @@ export function getRoleHome(role: UserRole) {
   return "/dashboard";
 }
 
-export function getRoleFromAuthMetadata(appMetadataRole: unknown, userMetadataRole: unknown): UserRole {
-  if (appMetadataRole === "admin") {
-    return "admin";
-  }
+function isUserRole(value: unknown): value is UserRole {
+  return value === "candidate" || value === "employer" || value === "admin";
+}
 
-  if (appMetadataRole === "employer" || appMetadataRole === "candidate") {
+export function getRoleFromAuthMetadata(appMetadataRole: unknown, userMetadataRole: unknown): UserRole {
+  if (isUserRole(appMetadataRole)) {
     return appMetadataRole;
   }
 
-  void userMetadataRole;
+  if (isUserRole(userMetadataRole)) {
+    return userMetadataRole;
+  }
 
   return "candidate";
 }

@@ -1,27 +1,15 @@
-import { createClient } from "@supabase/supabase-js";
+/**
+ * Promotes an account to admin (creating it if needed) or removes a user.
+ *
+ *   node scripts/manage-production-admin.mjs ensure-admin <email> [temporaryPassword]
+ *   node scripts/manage-production-admin.mjs delete-user <email>
+ */
+
 import crypto from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
+import bcrypt from "bcryptjs";
+import { connect, createDb, loadEnvFiles, randomUUID } from "./lib/mysql-client.mjs";
 
-const projectRoot = process.cwd();
-
-loadEnvFile(".env.local");
-loadEnvFile(".env");
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !serviceRoleKey) {
-  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.");
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, serviceRoleKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-});
+loadEnvFiles([".env.local", ".env"]);
 
 const [action, emailArg, passwordArg] = process.argv.slice(2);
 
@@ -48,228 +36,90 @@ function buildDisplayName(targetEmail) {
     .join(" ");
 }
 
-function createTemporaryPassword() {
+function generatePassword() {
   return `JobPulse!${crypto.randomBytes(9).toString("base64url")}`;
 }
 
-async function listAllUsers() {
-  const users = [];
-  let page = 1;
-
-  for (;;) {
-    const listed = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
-    if (listed.error) {
-      throw listed.error;
-    }
-
-    const batch = listed.data.users ?? [];
-    users.push(...batch);
-
-    if (batch.length < 1000) {
-      return users;
-    }
-
-    page += 1;
-  }
-}
-
-async function ensurePublicAdminRecord(userId, targetEmail, fullName) {
-  const payload = {
-    id: userId,
-    name: fullName,
-    email: targetEmail,
-    phone: null,
-    role: "admin",
-    is_banned: false,
-  };
-
-  const { error } = await supabase.from("users").upsert(payload, {
-    onConflict: "id",
-  });
-
-  if (error) {
-    throw error;
-  }
-}
-
-async function deletePublicUserRecord(userId) {
-  const { error } = await supabase.from("users").delete().eq("id", userId);
-  if (error) {
-    throw error;
-  }
-}
-
-function isUsersGrantError(error) {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    error.code === "42501" &&
-    "message" in error &&
-    typeof error.message === "string" &&
-    error.message.includes("permission denied for table users")
-  );
-}
-
-async function ensureAdmin(emailAddress, requestedPassword) {
-  const users = await listAllUsers();
-  const match = users.find((entry) => entry.email?.toLowerCase() === emailAddress);
+async function ensureAdmin(db, emailAddress, requestedPassword) {
+  const password = requestedPassword?.trim() || generatePassword();
+  const passwordHash = await bcrypt.hash(password, 10);
   const fullName = buildDisplayName(emailAddress);
-  const temporaryPassword = requestedPassword?.trim() || createTemporaryPassword();
 
-  if (!match) {
-    const created = await supabase.auth.admin.createUser({
-      email: emailAddress,
-      password: temporaryPassword,
-      email_confirm: true,
-      user_metadata: {
-        full_name: fullName,
-        role: "admin",
-      },
-      app_metadata: {
-        role: "admin",
-      },
-    });
+  const { data: existing, error: lookupError } = await db
+    .from("users")
+    .select("id")
+    .eq("email", emailAddress)
+    .maybeSingle();
 
-    if (created.error || !created.data.user?.id) {
-      throw created.error ?? new Error(`Could not create ${emailAddress}`);
-    }
+  if (lookupError) throw new Error(lookupError.message);
 
-    let usersTableSynced = true;
-    try {
-      await ensurePublicAdminRecord(created.data.user.id, emailAddress, fullName);
-    } catch (error) {
-      if (!isUsersGrantError(error)) {
-        throw error;
-      }
-      usersTableSynced = false;
-    }
-
-    return {
-      action: "created",
-      id: created.data.user.id,
-      email: emailAddress,
-      password: temporaryPassword,
-      usersTableSynced,
-    };
-  }
-
-  const updated = await supabase.auth.admin.updateUserById(match.id, {
-    password: temporaryPassword,
-    email_confirm: true,
-    user_metadata: {
-      ...(match.user_metadata ?? {}),
-      full_name: match.user_metadata?.full_name ?? fullName,
-      role: "admin",
-    },
-    app_metadata: {
-      ...(match.app_metadata ?? {}),
-      role: "admin",
-    },
-  });
-
-  if (updated.error || !updated.data.user?.id) {
-    throw updated.error ?? new Error(`Could not update ${emailAddress}`);
-  }
-
-  const effectiveName =
-    updated.data.user.user_metadata?.full_name ??
-    match.user_metadata?.full_name ??
-    fullName;
-
-  let usersTableSynced = true;
-  try {
-    await ensurePublicAdminRecord(updated.data.user.id, emailAddress, effectiveName);
-  } catch (error) {
-    if (!isUsersGrantError(error)) {
-      throw error;
-    }
-    usersTableSynced = false;
-  }
-
-  return {
-    action: "updated",
-    id: updated.data.user.id,
-    email: emailAddress,
-    password: temporaryPassword,
-    usersTableSynced,
+  const fields = {
+    name: fullName,
+    role: "admin",
+    password_hash: passwordHash,
+    email_verified: true,
+    is_banned: false,
+    app_metadata: { role: "admin" },
   };
+
+  if (existing) {
+    const { error } = await db.from("users").update(fields).eq("id", existing.id);
+    if (error) throw new Error(error.message);
+    return { action: "updated", email: emailAddress, id: existing.id, password };
+  }
+
+  const id = randomUUID();
+  const { error } = await db.from("users").insert({ id, email: emailAddress, ...fields });
+  if (error) throw new Error(error.message);
+  return { action: "created", email: emailAddress, id, password };
 }
 
-async function deleteUserByEmail(emailAddress) {
-  const users = await listAllUsers();
-  const match = users.find((entry) => entry.email?.toLowerCase() === emailAddress);
+async function deleteUserByEmail(db, emailAddress) {
+  const { data: existing, error: lookupError } = await db
+    .from("users")
+    .select("id")
+    .eq("email", emailAddress)
+    .maybeSingle();
 
-  if (!match?.id) {
+  if (lookupError) throw new Error(lookupError.message);
+
+  if (!existing) {
     return { deleted: false, email: emailAddress };
   }
 
-  let usersTableDeleted = true;
-  try {
-    await deletePublicUserRecord(match.id);
-  } catch (error) {
-    if (!isUsersGrantError(error)) {
-      throw error;
-    }
-    usersTableDeleted = false;
-  }
+  // Related rows (profiles, applications, resumes, …) are removed by the
+  // ON DELETE CASCADE constraints in db/mysql/schema.sql.
+  const { error } = await db.from("users").delete().eq("id", existing.id);
+  if (error) throw new Error(error.message);
 
-  const deleted = await supabase.auth.admin.deleteUser(match.id);
-  if (deleted.error) {
-    throw deleted.error;
-  }
-
-  return {
-    deleted: true,
-    id: match.id,
-    email: emailAddress,
-    usersTableDeleted,
-  };
-}
-
-function loadEnvFile(fileName) {
-  const filePath = path.join(projectRoot, fileName);
-  if (!fs.existsSync(filePath)) return;
-
-  const content = fs.readFileSync(filePath, "utf8");
-  for (const rawLine of content.split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const separator = line.indexOf("=");
-    if (separator === -1) continue;
-    const key = line.slice(0, separator).trim();
-    const value = line.slice(separator + 1).trim().replace(/^['"]|['"]$/g, "");
-    if (!(key in process.env)) {
-      process.env[key] = value;
-    }
-  }
+  return { deleted: true, email: emailAddress, id: existing.id };
 }
 
 async function main() {
-  if (action === "ensure-admin") {
-    const result = await ensureAdmin(email, passwordArg);
-    console.log(JSON.stringify(result, null, 2));
-    return;
-  }
+  const connection = await connect();
+  const db = createDb(connection);
 
-  if (action === "delete-user") {
-    const result = await deleteUserByEmail(email);
-    console.log(JSON.stringify(result, null, 2));
-    return;
-  }
+  try {
+    if (action === "ensure-admin") {
+      const result = await ensureAdmin(db, email, passwordArg);
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
 
-  throw new Error(`Unsupported action: ${action}`);
+    if (action === "delete-user") {
+      const result = await deleteUserByEmail(db, email);
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    console.error(`Unknown action: ${action}`);
+    process.exit(1);
+  } finally {
+    await connection.end();
+  }
 }
 
 main().catch((error) => {
-  if (error instanceof Error) {
-    console.error(error.message);
-  } else {
-    try {
-      console.error(JSON.stringify(error, null, 2));
-    } catch {
-      console.error(String(error));
-    }
-  }
+  console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 });

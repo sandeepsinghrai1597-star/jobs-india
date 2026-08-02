@@ -171,7 +171,7 @@ export function LearningRoadmapGenerator({
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {result.resumeKeywords.map((keyword, index) => (
-                    <Badge key={`${keyword}-${index}`} className="rounded-full bg-slate-900 px-3 py-1 text-white">
+                    <Badge key={`${keyword}-${index}`} className="rounded-full bg-slate-100 px-3 py-1 text-slate-950">
                       {keyword}
                     </Badge>
                   ))}

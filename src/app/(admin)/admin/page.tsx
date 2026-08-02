@@ -162,7 +162,7 @@ function FilterBar({
           </option>
         ))}
       </select>
-      <Button type="submit" className="h-11 rounded-2xl bg-slate-950 px-5 text-white hover:bg-slate-800">
+      <Button type="submit" className="h-11 rounded-2xl bg-slate-100 px-5 text-slate-950 hover:bg-slate-800">
         Apply
       </Button>
       <Button asChild variant="outline" className="h-11 rounded-2xl border-slate-200 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-950">
@@ -231,7 +231,7 @@ function SectionCard({
   children: ReactNode;
 }) {
   return (
-    <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 text-slate-700 shadow-xl shadow-slate-900/5 [&_td]:border-slate-200 [&_td]:text-slate-700 [&_th]:text-slate-700 [&_tr]:border-slate-200">
+    <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white text-slate-700 shadow-xl shadow-slate-900/5 [&_td]:border-slate-200 [&_td]:text-slate-700 [&_th]:text-slate-700 [&_tr]:border-slate-200">
       <CardHeader className="border-b border-slate-200/80 bg-[linear-gradient(135deg,rgba(14,165,233,0.08),rgba(59,130,246,0.03)_60%,rgba(255,255,255,0.96)_100%)]">
         <CardTitle className="text-lg text-slate-950">{title}</CardTitle>
         <CardDescription className="max-w-3xl leading-6 text-slate-600">{description}</CardDescription>
@@ -416,7 +416,7 @@ export default async function AdminDashboardPage({
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {overview.metrics.map((metric) => (
-          <Card key={metric.label} className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+          <Card key={metric.label} className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
             <CardContent className="space-y-3 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-800">{metric.label}</p>
               <p className="text-4xl font-semibold tracking-tight text-slate-950">{metric.value}</p>
@@ -431,7 +431,7 @@ export default async function AdminDashboardPage({
         description="Run important admin workflows directly from the dashboard."
       >
         <div className="flex flex-wrap gap-3">
-          <Button asChild className="rounded-2xl bg-slate-950 px-5 text-white hover:bg-slate-800">
+          <Button asChild className="rounded-2xl bg-slate-100 px-5 text-slate-950 hover:bg-slate-800">
             <Link href={`/admin/run-due-job-sources?returnTo=${encodeURIComponent(returnTo)}`}>
               Fetch Due Job Sources
             </Link>
@@ -463,18 +463,18 @@ export default async function AdminDashboardPage({
                 href={buildAdminHref(state, { section: section.id, page: 1 })}
                 className={`rounded-[1.5rem] border px-4 py-4 transition ${
                   active
-                    ? "border-slate-900 bg-slate-900 text-white shadow-lg shadow-slate-900/10"
+                    ? "border-slate-900 bg-slate-100 text-slate-950 shadow-lg shadow-slate-900/10"
                     : "border-slate-200 bg-white text-slate-900 hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-md"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold">{section.label}</p>
-                    <p className={`mt-2 text-sm leading-6 ${active ? "text-slate-300" : "text-slate-500"}`}>
+                    <p className={`mt-2 text-sm leading-6 ${active ? "text-slate-600" : "text-slate-500"}`}>
                       {section.subtitle}
                     </p>
                   </div>
-                  <Badge variant={active ? "secondary" : "outline"} className={active ? "bg-white/10 text-white" : ""}>
+                  <Badge variant={active ? "secondary" : "outline"} className={active ? "bg-slate-100 text-slate-950" : ""}>
                     {active ? "Open" : "View"}
                   </Badge>
                 </div>
@@ -518,7 +518,7 @@ export default async function AdminDashboardPage({
                         <div>
                           <p className="font-semibold text-slate-900">{user.name}</p>
                           <p className="text-sm text-slate-500">{user.email}</p>
-                          <p className="text-sm text-slate-400">{user.phone || "No phone"}</p>
+                          <p className="text-sm text-slate-500">{user.phone || "No phone"}</p>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -584,7 +584,7 @@ export default async function AdminDashboardPage({
                         <div>
                           <p className="font-semibold text-slate-900">{candidate.full_name || candidate.user_name || "Unnamed candidate"}</p>
                           <p className="text-sm text-slate-500">{candidate.user_email || candidate.phone || "No contact info"}</p>
-                          <p className="text-sm text-slate-400">{[candidate.city, candidate.state].filter(Boolean).join(", ") || "Location not set"}</p>
+                          <p className="text-sm text-slate-500">{[candidate.city, candidate.state].filter(Boolean).join(", ") || "Location not set"}</p>
                         </div>
                       </TableCell>
                       <TableCell>{candidate.preferred_roles.slice(0, 3).join(", ") || "--"}</TableCell>
@@ -638,7 +638,7 @@ export default async function AdminDashboardPage({
                         <div>
                           <p className="font-semibold text-slate-900">{employer.company_name}</p>
                           <p className="text-sm text-slate-500">{employer.user_email || employer.website || "No contact email"}</p>
-                          <p className="text-sm text-slate-400">{[employer.city, employer.state].filter(Boolean).join(", ") || "Location not set"}</p>
+                          <p className="text-sm text-slate-500">{[employer.city, employer.state].filter(Boolean).join(", ") || "Location not set"}</p>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -883,7 +883,7 @@ export default async function AdminDashboardPage({
                   </label>
                 </div>
               </CreateFormCard>
-              <Button type="submit" className="rounded-2xl bg-slate-950 px-5 text-white hover:bg-slate-800">
+              <Button type="submit" className="rounded-2xl bg-slate-100 px-5 text-slate-950 hover:bg-slate-800">
                 Add job to pending review
               </Button>
             </form>
@@ -945,7 +945,7 @@ export default async function AdminDashboardPage({
                         <div>
                           <p className="font-semibold text-slate-900">{job.title}</p>
                           <p className="text-sm text-slate-500">{job.company_name}</p>
-                          <p className="text-sm text-slate-400">{[job.city, job.state].filter(Boolean).join(", ") || "Location not set"}</p>
+                          <p className="text-sm text-slate-500">{[job.city, job.state].filter(Boolean).join(", ") || "Location not set"}</p>
                           <div className="mt-2 flex flex-wrap gap-2">
                             {job.category_slug ? <Badge variant="outline">{job.category_slug}</Badge> : null}
                             {job.source_type ? <Badge variant="secondary">{job.source_type}</Badge> : null}
@@ -968,7 +968,7 @@ export default async function AdminDashboardPage({
                       <TableCell>
                         <div>
                           <p>{formatDate(job.deadline)}</p>
-                          <p className="text-xs text-slate-400">Published: {formatDate(job.published_at)}</p>
+                          <p className="text-xs text-slate-500">Published: {formatDate(job.published_at)}</p>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
@@ -1134,7 +1134,7 @@ export default async function AdminDashboardPage({
                         <div>
                           <p className="font-semibold text-slate-900">{job.title}</p>
                           <p className="text-sm text-slate-500">{job.department}</p>
-                          <p className="text-sm text-slate-400">{job.state || "All India"}</p>
+                          <p className="text-sm text-slate-500">{job.state || "All India"}</p>
                         </div>
                       </TableCell>
                       <TableCell>{job.category}</TableCell>
@@ -1258,7 +1258,7 @@ export default async function AdminDashboardPage({
                         <div>
                           <p className="font-semibold text-slate-900">{internship.title}</p>
                           <p className="text-sm text-slate-500">{internship.company}</p>
-                          <p className="text-sm text-slate-400">{internship.location || "Location not set"}</p>
+                          <p className="text-sm text-slate-500">{internship.location || "Location not set"}</p>
                         </div>
                       </TableCell>
                       <TableCell>{internship.stipend || (internship.is_paid ? "Paid" : "Unpaid")}</TableCell>
@@ -1533,7 +1533,7 @@ export default async function AdminDashboardPage({
                         <div>
                           <p className="font-semibold text-slate-900">{report.job_title || "Unknown job"}</p>
                           <p className="text-sm text-slate-500">{report.company_name || "Unknown company"}</p>
-                          <p className="mt-1 text-sm text-slate-400">{report.details || "No additional details"}</p>
+                          <p className="mt-1 text-sm text-slate-500">{report.details || "No additional details"}</p>
                           {report.resolution_notes ? (
                             <p className="mt-1 text-sm text-emerald-700">Resolution: {report.resolution_notes}</p>
                           ) : null}
@@ -1630,7 +1630,7 @@ export default async function AdminDashboardPage({
                         <div>
                           <p className="font-semibold text-slate-900">{subscription.user_name || "Anonymous"}</p>
                           <p className="text-sm text-slate-500">{subscription.user_email || "--"}</p>
-                          <p className="text-sm text-slate-400">{subscription.city || "City not set"}</p>
+                          <p className="text-sm text-slate-500">{subscription.city || "City not set"}</p>
                         </div>
                       </TableCell>
                       <TableCell>{subscription.phone_number}</TableCell>

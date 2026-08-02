@@ -228,8 +228,8 @@ export function InterviewPreparation() {
       <div className="grid gap-8 xl:grid-cols-[0.92fr_1.08fr]">
         <Card className={`${panelClass} overflow-hidden`}>
           <CardContent className="p-0">
-            <div className="bg-[radial-gradient(circle_at_top_left,_rgba(6,182,212,0.22),_transparent_46%),linear-gradient(135deg,#082f49_0%,#0f172a_45%,#164e63_100%)] px-6 py-8 text-white sm:px-8">
-              <Badge className="rounded-full bg-white/12 px-4 py-1 text-white hover:bg-white/12">
+            <div className="bg-[radial-gradient(circle_at_top_left,_rgba(6,182,212,0.22),_transparent_46%),linear-gradient(135deg,#082f49_0%,#0f172a_45%,#164e63_100%)] px-6 py-8 text-slate-950 sm:px-8">
+              <Badge className="rounded-full bg-white px-4 py-1 text-slate-950 hover:bg-slate-100">
                 AI Mock Interview
               </Badge>
               <h2 className="mt-5 text-3xl font-semibold tracking-tight">
@@ -294,7 +294,7 @@ export function InterviewPreparation() {
                   size="lg"
                   onClick={handleStart}
                   disabled={isPending}
-                  className="rounded-full bg-slate-950 px-6 text-white hover:bg-slate-800"
+                  className="rounded-full bg-slate-100 px-6 text-slate-950 hover:bg-slate-800"
                 >
                   {isPending ? <LoaderCircle className="animate-spin" /> : <Sparkles />}
                   Start interview
@@ -381,7 +381,7 @@ export function InterviewPreparation() {
                     size="lg"
                     onClick={handleSubmitAnswer}
                     disabled={isPending}
-                    className="rounded-full bg-cyan-600 px-6 text-white hover:bg-cyan-700"
+                    className="rounded-full bg-cyan-600 px-6 text-slate-950 hover:bg-cyan-700"
                   >
                     {isPending ? <LoaderCircle className="animate-spin" /> : <ArrowRight />}
                     Submit answer
@@ -479,7 +479,7 @@ export function InterviewPreparation() {
                   Interview performance summary
                 </h3>
               </div>
-              <div className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white">
+              <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-950">
                 Overall score {session.report.overallScore}/100
               </div>
             </div>

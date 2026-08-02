@@ -176,7 +176,7 @@ export function SignupForm() {
           Full Name
         </label>
         <div className="relative">
-          <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 pointer-events-none" />
           <input
             id="fullname"
             type="text"
@@ -195,7 +195,7 @@ export function SignupForm() {
           Email Address
         </label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 pointer-events-none" />
           <input
             id="email"
             type="email"
@@ -215,7 +215,7 @@ export function SignupForm() {
           Phone Number
         </label>
         <div className="relative">
-          <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 pointer-events-none" />
           <input
             id="phone"
             type="tel"
@@ -237,7 +237,7 @@ export function SignupForm() {
           Password
         </label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 pointer-events-none" />
           <input
             id="password"
             type="password"
@@ -283,7 +283,7 @@ export function SignupForm() {
       >
         {isSubmitting ? (
           <span className="flex items-center justify-center gap-2">
-            <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+            <div className="h-4 w-4 rounded-full border-2 border-slate-200 border-t-transparent animate-spin" />
             Creating account...
           </span>
         ) : (

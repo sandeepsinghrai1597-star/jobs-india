@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ServerDataClient } from "@/lib/db/server-client";
 import type { CandidateProfile, Job, JobMatchSummary } from "@/types";
 
 type JobMatchScoreRow = {
@@ -242,7 +242,7 @@ export async function getCachedOrComputeJobMatches({
   profile,
   jobs,
 }: {
-  supabase: SupabaseClient;
+  supabase: Pick<ServerDataClient, "from">;
   profile: CandidateProfile | null;
   jobs: Job[];
 }) {

@@ -1,35 +1,11 @@
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import "server-only";
+import { createServerDataClient, type ServerDataClient } from "@/lib/db/server-client";
 
-export async function createClient() {
-  const cookieStore = await cookies();
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Missing Supabase environment variables.");
-  }
-
-  return createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
-            );
-          } catch {
-            // Server Components can read cookies but cannot persist refreshed auth cookies.
-          }
-        },
-      },
-    },
-  );
+/**
+ * Request-scoped data + auth client, backed by Hostinger MySQL.
+ * Kept at this path and name so existing server components, actions, and
+ * route handlers continue to work unchanged.
+ */
+export async function createClient(): Promise<ServerDataClient> {
+  return createServerDataClient();
 }

@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import {
-  RESUME_BUCKET,
-  RESUME_SIGNED_URL_TTL_SECONDS,
-} from "@/lib/resumes/storage";
+import { loadResumeFile } from "@/lib/resumes/file-store";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type ResumeRecord = {
@@ -133,13 +130,21 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: "This resume file is unavailable." }, { status: 404 });
   }
 
-  const { data, error } = await admin.storage
-    .from(RESUME_BUCKET)
-    .createSignedUrl(storagePath, RESUME_SIGNED_URL_TTL_SECONDS);
+  // Access was authorized above, so the bytes are streamed straight from the
+  // database rather than handing out a public signed URL.
+  const file = await loadResumeFile(storagePath);
 
-  if (error || !data?.signedUrl) {
+  if (!file) {
     return NextResponse.json({ message: "We could not prepare this resume download." }, { status: 500 });
   }
 
-  return NextResponse.redirect(data.signedUrl, { status: 302 });
+  return new NextResponse(new Uint8Array(file.content), {
+    status: 200,
+    headers: {
+      "Content-Type": file.contentType || "application/octet-stream",
+      "Content-Length": String(file.byteSize),
+      "Content-Disposition": `attachment; filename="${file.fileName.replace(/"/g, "")}"`,
+      "Cache-Control": "private, no-store",
+    },
+  });
 }

@@ -219,25 +219,25 @@ export function SalaryCalculator() {
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
           </div>
 
-          <div className="rounded-[1.75rem] bg-gradient-to-br from-slate-950 via-sky-900 to-cyan-700 p-6 text-white">
+          <div className="rounded-[1.75rem] bg-gradient-to-br from-slate-100 via-sky-900 to-cyan-700 p-6 text-white">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-100">
               What you get
             </p>
             <div className="mt-6 space-y-4">
-              <div className="rounded-[1.5rem] bg-white/10 p-4 backdrop-blur">
+              <div className="rounded-[1.5rem] bg-slate-100 p-4 backdrop-blur">
                 <p className="flex items-center gap-2 text-sm font-semibold text-cyan-100">
                   <TrendingUp className="size-4" />
                   Expected salary range
                 </p>
                 <p className="mt-3 text-2xl font-semibold">Entry, average, and high pay view</p>
               </div>
-              <div className="rounded-[1.5rem] bg-white/10 p-4 backdrop-blur">
+              <div className="rounded-[1.5rem] bg-slate-100 p-4 backdrop-blur">
                 <p className="text-sm leading-6 text-blue-50">
                   See which skills tend to lift salary, compare similar roles, and jump
                   straight into suggested jobs.
                 </p>
               </div>
-              <div className="rounded-[1.5rem] border border-white/15 bg-black/10 p-4">
+              <div className="rounded-[1.5rem] border border-slate-300 bg-black/10 p-4">
                 <p className="text-sm leading-6 text-cyan-50">
                   Salary estimates are approximate and may vary by company, city,
                   skills, and market condition.
@@ -255,7 +255,7 @@ export function SalaryCalculator() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
                   <div className="flex flex-wrap gap-2">
-                    <Badge className="rounded-full bg-slate-900 px-3 py-1 text-white hover:bg-slate-900">
+                    <Badge className="rounded-full bg-slate-100 px-3 py-1 text-slate-950 hover:bg-slate-100">
                       {result.sourceLabel}
                     </Badge>
                     {result.matchedSalaryRecords > 0 ? (

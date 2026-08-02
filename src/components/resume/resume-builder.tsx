@@ -635,7 +635,7 @@ export function ResumeBuilder({
               <div className="flex flex-wrap gap-3">
                 <Button
                   type="button"
-                  className="h-11 rounded-xl bg-[color:var(--rb-primary)] px-5 text-white shadow-none hover:bg-[color:var(--rb-primary-strong)]"
+                  className="h-11 rounded-xl bg-[color:var(--rb-primary)] px-5 text-slate-950 shadow-none hover:bg-[color:var(--rb-primary-strong)]"
                   onClick={saveResume}
                   disabled={isSaving}
                 >
@@ -913,7 +913,7 @@ export function ResumeBuilder({
                     <div className="flex flex-wrap gap-3">
                       <Button
                         type="button"
-                        className="h-10 rounded-xl bg-[color:var(--rb-primary)] px-4 text-white shadow-none hover:bg-[color:var(--rb-primary-strong)]"
+                        className="h-10 rounded-xl bg-[color:var(--rb-primary)] px-4 text-slate-950 shadow-none hover:bg-[color:var(--rb-primary-strong)]"
                         onClick={() => callAi("generate-summary")}
                         disabled={isAiWorking}
                       >

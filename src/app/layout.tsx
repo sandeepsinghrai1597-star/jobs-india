@@ -1,8 +1,22 @@
 import type { Metadata } from "next";
+import { Open_Sans, Poppins } from "next/font/google";
 import "./globals.css";
 import { siteConfig } from "@/lib/data/site";
 import { buildOrganizationSchema, buildWebsiteSchema } from "@/lib/seo";
 import { SchemaScript } from "@/components/shared/schema-script";
+
+const openSans = Open_Sans({
+  subsets: ["latin"],
+  variable: "--font-open-sans",
+  display: "swap",
+});
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-poppins",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -57,7 +71,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-IN" className="dark h-full">
+    <html lang="en-IN" className={`h-full ${openSans.variable} ${poppins.variable}`}>
       <body className="min-h-full bg-background font-sans text-foreground antialiased">
         <SchemaScript data={buildOrganizationSchema()} />
         <SchemaScript data={buildWebsiteSchema()} />

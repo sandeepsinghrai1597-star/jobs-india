@@ -100,7 +100,7 @@ export default async function GovernmentJobsPage() {
         }}
       />
 
-      <div className="space-y-8 rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-sm backdrop-blur">
+      <div className="space-y-8 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm backdrop-blur">
         <SectionHeading
           eyebrow="Government Jobs Hub"
           title="Latest government job updates with official-link-first details"
@@ -111,15 +111,15 @@ export default async function GovernmentJobsPage() {
           {governmentJobsDisclaimer}
         </p>
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-5">
+          <div className="rounded-2xl border border-slate-200 bg-slate-100 p-5">
             <p className="text-sm uppercase tracking-[0.18em] text-primary">Categories</p>
             <p className="mt-2 text-3xl font-semibold">{governmentJobCategories.length}</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-5">
+          <div className="rounded-2xl border border-slate-200 bg-slate-100 p-5">
             <p className="text-sm uppercase tracking-[0.18em] text-primary">Live Pages</p>
             <p className="mt-2 text-3xl font-semibold">{approvedGovernmentJobs.length}</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-slate-950/30 p-5">
+          <div className="rounded-2xl border border-slate-200 bg-slate-100 p-5">
             <p className="text-sm uppercase tracking-[0.18em] text-primary">Focus</p>
             <p className="mt-2 text-lg font-medium">Official notification, apply link, dates, and FAQs</p>
           </div>
@@ -137,12 +137,12 @@ export default async function GovernmentJobsPage() {
           />
           <div className="mt-8 grid gap-5 lg:grid-cols-3">
             {updateColumns.map((column) => (
-              <Card key={column.heading} className="rounded-[1.75rem] border-white/10 bg-white/5 backdrop-blur">
+              <Card key={column.heading} className="rounded-[1.75rem] border-slate-200 bg-white backdrop-blur">
                 <CardContent className="space-y-4 p-6">
                   <h2 className="font-heading text-xl font-semibold">{column.heading}</h2>
                   <ul className="space-y-3 text-sm leading-6">
                     {column.items.map((job) => (
-                      <li key={job.slug} className="border-b border-white/5 pb-2 last:border-b-0">
+                      <li key={job.slug} className="border-b border-slate-100 pb-2 last:border-b-0">
                         <Link href={`/government-jobs/${job.slug}`} className="font-medium text-primary hover:underline">
                           {job.title}
                         </Link>
@@ -168,7 +168,7 @@ export default async function GovernmentJobsPage() {
             const count = approvedGovernmentJobs.filter((job) => job.categorySlug === category.slug).length;
 
             return (
-              <Card key={category.slug} className="rounded-[1.75rem] border-white/10 bg-white/5 backdrop-blur">
+              <Card key={category.slug} className="rounded-[1.75rem] border-slate-200 bg-white backdrop-blur">
                 <CardContent className="space-y-4 p-6">
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
@@ -195,13 +195,13 @@ export default async function GovernmentJobsPage() {
         />
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
           {featuredJobs.map((job) => (
-            <Card key={job.id} className="rounded-[1.75rem] border-white/10 bg-white/5 backdrop-blur">
+            <Card key={job.id} className="rounded-[1.75rem] border-slate-200 bg-white backdrop-blur">
               <CardContent className="space-y-4 p-6">
                 <div className="flex flex-wrap items-center gap-3">
                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
                     {job.category}
                   </p>
-                  <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted-foreground">
+                  <span className="rounded-full border border-slate-200 px-3 py-1 text-xs text-muted-foreground">
                     {job.state}
                   </span>
                 </div>
@@ -229,7 +229,7 @@ export default async function GovernmentJobsPage() {
         </div>
       </section>
 
-      <section className="mt-12 rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-sm backdrop-blur">
+      <section className="mt-12 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm backdrop-blur">
         <SectionHeading
           eyebrow="How To Use"
           title="Use category pages and detail pages together"

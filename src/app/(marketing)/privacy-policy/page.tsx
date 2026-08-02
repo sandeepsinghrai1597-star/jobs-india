@@ -9,7 +9,7 @@ export const metadata = buildMetadata({
 export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="space-y-8 rounded-[2rem] border border-white/10 bg-white/5 p-8 backdrop-blur">
+      <div className="space-y-8 rounded-[2rem] border border-slate-200 bg-white p-8 backdrop-blur">
         <h1 className="font-heading text-4xl font-semibold tracking-tight">Privacy Policy</h1>
         <p className="text-lg leading-8 text-muted-foreground">
           JobPulse India collects only the information needed to provide job discovery, applications,

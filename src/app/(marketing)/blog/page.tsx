@@ -43,17 +43,17 @@ export default async function BlogPage({
           description="Search by topic, filter by category, and move from content into resumes, jobs, and AI-guided next steps."
           as="h1"
         />
-        <form className="mt-8 grid gap-4 rounded-[1.5rem] border border-slate-200 bg-white/80 p-4 md:grid-cols-[1.4fr_0.8fr_auto]">
+        <form className="mt-8 grid gap-4 rounded-[1.5rem] border border-slate-200 bg-white p-4 md:grid-cols-[1.4fr_0.8fr_auto]">
           <label className="space-y-2">
             <span className="text-sm font-medium text-slate-700">Search articles</span>
             <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
-              <Search className="size-4 text-slate-400" />
+              <Search className="size-4 text-slate-500" />
               <input
                 type="search"
                 name="q"
                 defaultValue={selectedQuery}
                 placeholder="Search resume, interview, roadmap, fresher jobs..."
-                className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-500"
               />
             </div>
           </label>
@@ -94,7 +94,7 @@ export default async function BlogPage({
             ))}
           </div>
         ) : (
-          <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white/80 p-10 text-center">
+          <div className="rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-10 text-center">
             <h2 className="font-heading text-2xl font-semibold text-slate-950">No articles matched</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
               Try a broader keyword or switch back to all categories to explore more career content.

@@ -172,7 +172,7 @@ function SubmitButton({
     <Button
       type="submit"
       disabled={pending}
-      className="h-11 rounded-2xl bg-slate-950 px-5 text-white hover:bg-slate-800"
+      className="h-11 rounded-2xl bg-slate-100 px-5 text-slate-950 hover:bg-slate-800"
     >
       {pending ? pendingLabel : idleLabel}
     </Button>
@@ -233,7 +233,7 @@ function AdminJobForm({
       <form action={formAction} className="space-y-6">
         <input type="hidden" name="returnTo" value="/admin/jobs/review" />
 
-        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
           <CardHeader className="border-b border-slate-200 bg-[linear-gradient(135deg,rgba(14,165,233,0.1),rgba(255,255,255,0.96))]">
             <CardTitle>Company and role</CardTitle>
             <CardDescription>Start with the public-facing company profile and job basics.</CardDescription>
@@ -311,7 +311,7 @@ function AdminJobForm({
           </CardContent>
         </Card>
 
-        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
           <CardHeader className="border-b border-slate-200 bg-slate-50">
             <CardTitle>Job details</CardTitle>
             <CardDescription>Capture location, pay, seniority, and hiring context.</CardDescription>
@@ -394,7 +394,7 @@ function AdminJobForm({
           </CardContent>
         </Card>
 
-        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
           <CardHeader className="border-b border-slate-200 bg-slate-50">
             <CardTitle>Publishing controls</CardTitle>
             <CardDescription>Define where candidates apply and how the listing is labeled.</CardDescription>

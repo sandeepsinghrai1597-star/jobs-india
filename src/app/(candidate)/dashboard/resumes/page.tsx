@@ -35,10 +35,10 @@ export default async function CandidateResumesPage() {
       title="Resume library"
       description="Manage uploaded resumes, created resumes, ATS scores, and export/download actions."
     >
-      <Card className="rounded-[1.75rem] border-white/10 bg-slate-950/70 backdrop-blur">
+      <Card className="rounded-[1.75rem] border-slate-200 bg-slate-100 backdrop-blur">
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-white">Saved resumes</CardTitle>
+            <CardTitle className="text-slate-950">Saved resumes</CardTitle>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Resume builder drafts are stored as structured JSON so you can keep refining and
               exporting them later.
@@ -53,10 +53,10 @@ export default async function CandidateResumesPage() {
             resumes.map((resume) => (
               <div
                 key={resume.id}
-                className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200"
+                className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-800"
               >
-                <p className="font-medium text-white">{resume.title}</p>
-                <p className="mt-1 text-slate-400">
+                <p className="font-medium text-slate-950">{resume.title}</p>
+                <p className="mt-1 text-slate-500">
                   Template: {resume.template_key ?? "fresher"}
                 </p>
                 <p className="mt-1 text-slate-500">Updated {resume.updated_at}</p>
@@ -70,7 +70,7 @@ export default async function CandidateResumesPage() {
               </div>
             ))
           ) : (
-            <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-6 text-sm leading-6 text-muted-foreground">
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-sm leading-6 text-muted-foreground">
               No saved resumes yet. Start in the resume builder and your drafts will appear here.
             </div>
           )}

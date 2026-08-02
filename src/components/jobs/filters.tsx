@@ -28,7 +28,7 @@ export default function Filters() {
   }
 
   return (
-    <div className="rounded-2xl border border-white/5 bg-white/3 p-4">
+    <div className="rounded-2xl border border-slate-100 bg-white p-4">
       <h3 className="font-semibold">Filters</h3>
       <div className="mt-3 space-y-3">
         <div>
@@ -38,7 +38,7 @@ export default function Filters() {
 
         <div>
           <label className="text-xs text-muted-foreground">Job type</label>
-          <select value={jobType} onChange={(e) => setJobType(e.target.value)} className="mt-1 w-full rounded-md bg-white/5 p-2">
+          <select value={jobType} onChange={(e) => setJobType(e.target.value)} className="mt-1 w-full rounded-md bg-white p-2">
             <option value="">Any</option>
             <option value="full-time">Full time</option>
             <option value="part-time">Part time</option>
@@ -49,7 +49,7 @@ export default function Filters() {
 
         <div>
           <label className="text-xs text-muted-foreground">Work mode</label>
-          <select value={workMode} onChange={(e) => setWorkMode(e.target.value)} className="mt-1 w-full rounded-md bg-white/5 p-2">
+          <select value={workMode} onChange={(e) => setWorkMode(e.target.value)} className="mt-1 w-full rounded-md bg-white p-2">
             <option value="">Any</option>
             <option value="remote">Remote</option>
             <option value="hybrid">Hybrid</option>

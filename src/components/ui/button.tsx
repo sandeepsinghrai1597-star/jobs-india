@@ -9,12 +9,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-[0_0_0_1px_rgba(255,45,120,0.35),0_0_22px_rgba(255,45,120,0.28)] hover:bg-[color-mix(in_oklch,var(--primary),white_8%)] hover:shadow-[0_0_0_1px_rgba(255,45,120,0.55),0_0_30px_rgba(255,45,120,0.36)]",
+        default: "bg-primary text-primary-foreground shadow-sm hover:bg-[color-mix(in_oklch,var(--primary),black_10%)]",
         outline:
-          "border-white/14 bg-white/4 text-slate-100 hover:border-[rgba(0,255,204,0.55)] hover:bg-[rgba(0,255,204,0.08)] hover:text-white aria-expanded:bg-muted aria-expanded:text-foreground",
+          "border-slate-300 bg-white text-slate-800 hover:border-primary hover:bg-slate-50 hover:text-slate-950 aria-expanded:bg-muted aria-expanded:text-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)] hover:bg-[color-mix(in_oklch,var(--secondary),white_4%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
-        ghost: "text-slate-300 hover:bg-white/6 hover:text-white aria-expanded:bg-white/8 aria-expanded:text-white",
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-[color-mix(in_oklch,var(--secondary),black_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+        ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-950 aria-expanded:bg-slate-100 aria-expanded:text-slate-950",
         destructive:
           "bg-destructive/15 text-destructive hover:bg-destructive/25 focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
         link: "text-primary underline-offset-4 hover:underline",

@@ -15,7 +15,7 @@ export default function CandidateRoadmapPage() {
         {featuredGuide.roadmap30Days.map((week) => (
           <Card
             key={week.label}
-            className="rounded-[1.75rem] border-white/10 bg-slate-950/70 backdrop-blur"
+            className="rounded-[1.75rem] border-slate-200 bg-slate-100 backdrop-blur"
           >
             <CardContent className="space-y-3 p-6">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">

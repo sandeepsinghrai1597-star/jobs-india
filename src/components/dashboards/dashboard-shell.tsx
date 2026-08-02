@@ -125,7 +125,7 @@ export function DashboardShell({
         <div className="jp-panel flex items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">
             <p className="font-heading text-xl font-semibold text-primary jp-neon-text">JobPulse India</p>
-            <p className="truncate text-xs uppercase tracking-[0.22em] text-slate-400">
+            <p className="truncate text-xs uppercase tracking-[0.22em] text-slate-500">
               {roleLabel} workspace
             </p>
           </div>
@@ -135,7 +135,7 @@ export function DashboardShell({
             </Badge>
             <Link
               href="/auth/logout"
-              className="inline-flex size-10 items-center justify-center rounded-2xl border border-white/10 bg-white/4 text-slate-300 transition hover:text-white"
+              className="inline-flex size-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 transition hover:text-slate-950"
             >
               <LogOut className="size-4" />
             </Link>
@@ -145,9 +145,9 @@ export function DashboardShell({
         <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className="hidden lg:block">
             <div className="jp-panel sticky top-24 overflow-hidden">
-              <div className="border-b border-white/8 px-5 py-5">
-                <p className="text-xs uppercase tracking-[0.22em] text-cyan-300">{roleLabel} dashboard</p>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
+              <div className="border-b border-slate-100 px-5 py-5">
+                <p className="text-xs uppercase tracking-[0.22em] text-primary">{roleLabel} dashboard</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
                   Mobile-native workflow layers, quick actions, and live navigation across your workspace.
                 </p>
               </div>
@@ -165,8 +165,8 @@ export function DashboardShell({
                         className={cn(
                           "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition",
                           active
-                            ? "bg-primary text-primary-foreground shadow-[0_0_18px_rgba(255,45,120,0.28)]"
-                            : "bg-white/4 text-slate-300 hover:bg-white/8 hover:text-white",
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-950",
                         )}
                       >
                         <Icon className="size-4" />
@@ -176,7 +176,7 @@ export function DashboardShell({
                   })}
                 </nav>
 
-                <div className="space-y-3 border-t border-white/8 pt-5">
+                <div className="space-y-3 border-t border-slate-100 pt-5">
                   <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Quick links</p>
                   {roleResources[role].map((item) => {
                     const Icon = item.icon;
@@ -184,10 +184,10 @@ export function DashboardShell({
                       <Link
                         key={item.href}
                         href={item.href}
-                        className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/4 px-4 py-3 text-sm text-slate-300 transition hover:border-cyan-400/30 hover:text-white"
+                        className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white px-4 py-3 text-sm text-slate-600 transition hover:border-cyan-400/30 hover:text-slate-950"
                       >
                         <span className="flex items-center gap-3">
-                          <Icon className="size-4 text-cyan-300" />
+                          <Icon className="size-4 text-primary" />
                           {item.label}
                         </span>
                         <ArrowUpRight className="size-4 text-slate-500" />
@@ -203,23 +203,23 @@ export function DashboardShell({
             <div className="jp-panel overflow-hidden">
               <div className="flex flex-col gap-5 bg-[linear-gradient(135deg,rgba(255,45,120,0.16),rgba(0,255,204,0.08)_54%,rgba(255,255,255,0.02)_100%)] px-5 py-6 sm:px-6">
                 <div className="space-y-3">
-                  <p className="text-xs uppercase tracking-[0.22em] text-cyan-300">Workspace overview</p>
-                  <h1 className="font-heading text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                  <p className="text-xs uppercase tracking-[0.22em] text-primary">Workspace overview</p>
+                  <h1 className="font-heading text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
                     {title}
                   </h1>
-                  <p className="max-w-3xl text-sm leading-7 text-slate-300">{description}</p>
+                  <p className="max-w-3xl text-sm leading-7 text-slate-600">{description}</p>
                 </div>
                 <div className="flex flex-wrap gap-3">
                   <Link
                     href={primaryCtaHref}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-[0_0_22px_rgba(255,45,120,0.28)] transition hover:brightness-110"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-md transition hover:brightness-110"
                   >
                     <Sparkles className="size-4" />
                     {role === "candidate" ? "Find jobs" : role === "employer" ? "Post job" : "Review jobs"}
                   </Link>
                   <Link
                     href="/"
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/4 px-5 text-sm font-semibold text-slate-200 transition hover:bg-white/8"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
                   >
                     <Home className="size-4" />
                     Return home
@@ -230,11 +230,11 @@ export function DashboardShell({
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {dashboardMetrics[role].map((metric) => (
-                <Card key={metric.label} className="border-white/8 bg-[linear-gradient(180deg,rgba(17,15,27,0.96),rgba(12,11,22,0.94))]">
+                <Card key={metric.label} className="border-slate-100 bg-white shadow-sm">
                   <CardContent className="space-y-3 p-5">
-                    <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-300">{metric.label}</p>
-                    <p className="text-3xl font-semibold text-white">{metric.value}</p>
-                    <p className="text-sm text-slate-400">{metric.change}</p>
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-primary">{metric.label}</p>
+                    <p className="text-3xl font-semibold text-slate-950">{metric.value}</p>
+                    <p className="text-sm text-slate-500">{metric.change}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -245,7 +245,7 @@ export function DashboardShell({
         </div>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/8 bg-[rgba(10,9,19,0.96)] px-3 py-2 backdrop-blur-xl lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-100 bg-[rgba(255,255,255,0.96)] px-3 py-2 backdrop-blur-xl lg:hidden">
         <div className="mx-auto grid max-w-md grid-cols-5 gap-2">
           {navigation[role].map((item) => {
             const Icon = item.icon;
@@ -258,8 +258,8 @@ export function DashboardShell({
                 className={cn(
                   "flex flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-medium uppercase tracking-[0.16em] transition",
                   active
-                    ? "bg-primary text-primary-foreground shadow-[0_0_18px_rgba(255,45,120,0.32)]"
-                    : "text-slate-400 hover:bg-white/6 hover:text-white",
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-950",
                 )}
               >
                 <Icon className="size-4" />

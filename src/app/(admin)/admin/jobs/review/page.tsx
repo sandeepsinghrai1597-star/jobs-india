@@ -91,7 +91,7 @@ export default async function AdminJobReviewPage({
       description="Moderate pending submissions, live listings, flagged risk cases, and expired inventory from one admin surface."
     >
       <div className="space-y-6">
-        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+        <Card className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
           <CardHeader className="border-b border-slate-200/80 bg-[linear-gradient(135deg,rgba(14,165,233,0.08),rgba(59,130,246,0.03)_60%,rgba(255,255,255,0.96)_100%)]">
             <CardTitle>Review lanes</CardTitle>
             <CardDescription>Switch between moderation states and work the queue with bulk actions.</CardDescription>
@@ -104,12 +104,12 @@ export default async function AdminJobReviewPage({
                   href={buildReviewHref(item, q)}
                   className={`rounded-2xl border px-4 py-3 text-sm transition ${
                     item === tab
-                      ? "border-slate-950 bg-slate-950 text-white"
+                      ? "border-slate-950 bg-slate-100 text-slate-950"
                       : "border-slate-200 bg-slate-50 text-slate-700 hover:border-sky-300 hover:bg-white"
                   }`}
                 >
                   <span className="font-semibold">{tabLabels[item]}</span>
-                  <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${item === tab ? "bg-white/10 text-white" : "bg-slate-200 text-slate-700"}`}>
+                  <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${item === tab ? "bg-slate-100 text-slate-950" : "bg-slate-200 text-slate-700"}`}>
                     {counts[item]}
                   </span>
                 </Link>
@@ -125,7 +125,7 @@ export default async function AdminJobReviewPage({
                   placeholder="Search by role, company, city, or URL"
                   className="h-11 min-w-[280px] flex-1 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-sky-400"
                 />
-                <Button type="submit" className="h-11 rounded-2xl bg-slate-950 px-5 text-white hover:bg-slate-800">
+                <Button type="submit" className="h-11 rounded-2xl bg-slate-100 px-5 text-slate-950 hover:bg-slate-800">
                   Search
                 </Button>
                 <Button asChild variant="outline" className="h-11 rounded-2xl border-slate-200 bg-white">
@@ -164,7 +164,7 @@ export default async function AdminJobReviewPage({
         ) : (
           <div className="space-y-4">
             {jobs.rows.map((job) => (
-              <Card key={job.id} className="rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-lg shadow-slate-900/5">
+              <Card key={job.id} className="rounded-[1.75rem] border border-slate-200/80 bg-white shadow-lg shadow-slate-900/5">
                 <CardContent className="space-y-5 p-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-3">

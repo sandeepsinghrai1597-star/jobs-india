@@ -191,11 +191,11 @@ function FilterSelect({
 }) {
   return (
     <label className="space-y-2">
-      <span className="text-sm font-medium text-white">{label}</span>
+      <span className="text-sm font-medium text-slate-950">{label}</span>
       <select
         name={name}
         defaultValue={value}
-        className="h-11 w-full rounded-xl border border-white/10 bg-white/4 px-3 text-sm text-white shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 [&_option]:bg-slate-950 [&_option]:text-white"
+        className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-950 shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 [&_option]:bg-slate-100 [&_option]:text-slate-950"
       >
         {options.map((option) => (
           <option key={option.value || option.label} value={option.value}>
@@ -276,7 +276,7 @@ function JobsFiltersPanel({
       />
 
       <div className="space-y-3">
-        <p className="text-sm font-medium text-white">Skills</p>
+        <p className="text-sm font-medium text-slate-950">Skills</p>
         <div className="flex flex-wrap gap-2">
           {facets.skills.map((skill) => (
             <label
@@ -284,7 +284,7 @@ function JobsFiltersPanel({
               className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-2 text-sm transition ${
                 query.skills.includes(skill.value)
                   ? "border-primary bg-primary/8 text-primary"
-                  : "border-white/10 bg-white/4 text-slate-300 hover:border-white/20"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
               }`}
             >
               <input
@@ -309,7 +309,7 @@ function JobsFiltersPanel({
         ].map((item) => (
           <label
             key={item.name}
-            className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/4 px-3 py-3 text-sm text-slate-300"
+            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-600"
           >
             <input
               type="checkbox"
@@ -358,11 +358,11 @@ export default async function JobsPage({
         })}
       />
 
-      <section className="relative overflow-hidden rounded-[2rem] border border-white/8 bg-[linear-gradient(180deg,rgba(18,16,29,0.96),rgba(12,11,22,0.94))] p-6 shadow-sm shadow-primary/10 sm:p-8">
+      <section className="relative overflow-hidden rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm shadow-primary/10 sm:p-8">
         <div className="absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top_left,_rgba(255,45,120,0.25),_transparent_55%),radial-gradient(circle_at_top_right,_rgba(0,255,204,0.18),_transparent_45%)]" />
         <div className="relative">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge className="rounded-full bg-slate-900 text-white">Public jobs</Badge>
+            <Badge className="rounded-full bg-slate-100 text-slate-950">Public jobs</Badge>
             <Badge variant="secondary" className="rounded-full">
               Active listings only
             </Badge>
@@ -370,35 +370,35 @@ export default async function JobsPage({
 
           <div className="mt-5 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="space-y-4">
-              <h1 className="font-heading text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+              <h1 className="font-heading text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
                 Search active jobs with filters candidates actually use
               </h1>
-              <p className="max-w-3xl text-base leading-7 text-slate-300">
+              <p className="max-w-3xl text-base leading-7 text-slate-600">
                 Browse public job openings by keyword, city, state, salary, experience, education, work mode,
                 industry, skills, trust badges, and recency. This page only surfaces listings where the job
-                status is <span className="font-semibold text-white">active</span>.
+                status is <span className="font-semibold text-slate-950">active</span>.
               </p>
-              <p className="max-w-3xl text-sm leading-6 text-slate-400">
+              <p className="max-w-3xl text-sm leading-6 text-slate-500">
                 Featured listings, remote roles, fresher-friendly openings, and verified sources are all easy to
                 isolate here, so candidates can move from broad discovery to shortlist-ready results faster.
               </p>
             </div>
 
-            <Card className="rounded-[1.75rem] border-white/8 bg-white/4 shadow-none">
-              <CardContent className="grid gap-4 p-6 text-sm text-slate-300 sm:grid-cols-3 lg:grid-cols-1">
-                <div className="rounded-2xl bg-white/6 p-4 shadow-sm">
+            <Card className="rounded-[1.75rem] border-slate-100 bg-white shadow-none">
+              <CardContent className="grid gap-4 p-6 text-sm text-slate-600 sm:grid-cols-3 lg:grid-cols-1">
+                <div className="rounded-2xl bg-white p-4 shadow-sm">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Active jobs</p>
-                  <p className="mt-2 text-3xl font-semibold text-white">{activeCount}</p>
+                  <p className="mt-2 text-3xl font-semibold text-slate-950">{activeCount}</p>
                 </div>
-                <div className="rounded-2xl bg-white/6 p-4 shadow-sm">
+                <div className="rounded-2xl bg-white p-4 shadow-sm">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Live filters</p>
-                  <p className="mt-2 text-3xl font-semibold text-white">{badges.length}</p>
+                  <p className="mt-2 text-3xl font-semibold text-slate-950">{badges.length}</p>
                 </div>
-                <div className="rounded-2xl bg-white/6 p-4 shadow-sm">
+                <div className="rounded-2xl bg-white p-4 shadow-sm">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
                     {hasActiveJobs ? "Popular skills" : "Inventory status"}
                   </p>
-                  <p className="mt-2 text-lg font-semibold text-white">
+                  <p className="mt-2 text-lg font-semibold text-slate-950">
                     {hasActiveJobs
                       ? facets.skills.slice(0, 2).map((skill) => skill.label).join(", ")
                       : "No active jobs yet"}
@@ -410,7 +410,7 @@ export default async function JobsPage({
 
           <form
             action="/jobs"
-            className="relative mt-8 grid gap-3 rounded-[1.75rem] border border-white/8 bg-white/4 p-4 shadow-inner shadow-black/20 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_auto]"
+            className="relative mt-8 grid gap-3 rounded-[1.75rem] border border-slate-100 bg-white p-4 shadow-inner shadow-black/20 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_auto]"
           >
             {hiddenQueryFields(query, [
               "keyword",
@@ -419,13 +419,13 @@ export default async function JobsPage({
               "page",
             ])}
             <label className="relative">
-              <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
                 name="keyword"
                 defaultValue={query.keyword}
                 placeholder="Job title, company, skill"
-                className="h-12 w-full rounded-2xl border border-white/10 bg-white/4 pl-11 pr-4 text-sm text-white shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-950 shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
               />
             </label>
             <input
@@ -433,14 +433,14 @@ export default async function JobsPage({
               name="city"
               defaultValue={query.city}
               placeholder="City"
-              className="h-12 rounded-2xl border border-white/10 bg-white/4 px-4 text-sm text-white shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+              className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
             />
             <input
               type="text"
               name="state"
               defaultValue={query.state}
               placeholder="State"
-              className="h-12 rounded-2xl border border-white/10 bg-white/4 px-4 text-sm text-white shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
+              className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-950 shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
             />
             <Button type="submit" className="h-12 rounded-2xl px-6">
               Search jobs
@@ -461,11 +461,11 @@ export default async function JobsPage({
 
       <section className="mt-8 grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="hidden lg:block">
-          <div className="sticky top-24 rounded-[1.75rem] border border-white/8 bg-white/4 p-5 shadow-sm">
+          <div className="sticky top-24 rounded-[1.75rem] border border-slate-100 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-white">Filters</p>
-                <p className="text-sm text-slate-400">Refine by salary, trust, and candidate fit.</p>
+                <p className="text-sm font-semibold text-slate-950">Filters</p>
+                <p className="text-sm text-slate-500">Refine by salary, trust, and candidate fit.</p>
               </div>
             </div>
             <JobsFiltersPanel query={query} facets={facets} />
@@ -473,14 +473,14 @@ export default async function JobsPage({
         </aside>
 
         <div className="space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-white/8 bg-white/4 p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-slate-100 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="flex size-11 items-center justify-center rounded-2xl bg-white/6 text-slate-200">
+              <div className="flex size-11 items-center justify-center rounded-2xl bg-white text-slate-800">
                 <BriefcaseBusiness className="size-5" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">{hasActiveJobs ? `${total} active jobs` : "No active jobs"}</p>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm font-semibold text-slate-950">{hasActiveJobs ? `${total} active jobs` : "No active jobs"}</p>
+                <p className="text-sm text-slate-500">
                   Page {page} of {totalPages}
                 </p>
               </div>
@@ -495,12 +495,12 @@ export default async function JobsPage({
 
               <form action="/jobs" className="flex items-center gap-3">
                 {hiddenQueryFields(query, ["sort", "page"])}
-                <label className="flex items-center gap-2 text-sm text-slate-300">
+                <label className="flex items-center gap-2 text-sm text-slate-600">
                   <span>Sort by</span>
                   <select
                     name="sort"
                     defaultValue={query.sort}
-                    className="h-10 rounded-full border border-white/10 bg-white/4 px-4 text-sm text-white shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 [&_option]:bg-slate-950 [&_option]:text-white"
+                    className="h-10 rounded-full border border-slate-200 bg-white px-4 text-sm text-slate-950 shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 [&_option]:bg-slate-100 [&_option]:text-slate-950"
                   >
                     {sortOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -548,8 +548,8 @@ export default async function JobsPage({
                 <PersonalizedJobCardList jobs={results} />
               </JobPersonalizationProvider>
 
-              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-white/8 bg-white/4 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-slate-400">
+              <div className="flex flex-col gap-4 rounded-[1.5rem] border border-slate-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-slate-500">
                   Showing {(page - 1) * 12 + 1} to {Math.min(page * 12, total)} of {total} active jobs.
                 </p>
                 <Pagination page={page} totalPages={totalPages} query={query} />
@@ -560,15 +560,15 @@ export default async function JobsPage({
       </section>
 
       <section className="mt-10 grid gap-5 lg:grid-cols-[1fr_0.9fr]">
-        <Card className="rounded-[1.75rem] border-white/8 bg-white/4 shadow-sm">
+        <Card className="rounded-[1.75rem] border-slate-100 bg-white shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
                 <Sparkles className="size-5" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-white">Related searches</h2>
-                <p className="text-sm text-slate-400">Jump into common search paths candidates use from this page.</p>
+                <h2 className="text-xl font-semibold text-slate-950">Related searches</h2>
+                <p className="text-sm text-slate-500">Jump into common search paths candidates use from this page.</p>
               </div>
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
@@ -581,22 +581,22 @@ export default async function JobsPage({
                 </Button>
               ))}
               {!hasActiveJobs ? (
-                <p className="text-sm text-slate-400">Related searches will appear here once active jobs are available.</p>
+                <p className="text-sm text-slate-500">Related searches will appear here once active jobs are available.</p>
               ) : null}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-[1.75rem] border-white/8 bg-white/4 shadow-sm">
+        <Card className="rounded-[1.75rem] border-slate-100 bg-white shadow-sm">
           <CardContent className="p-6">
-            <h2 className="text-xl font-semibold text-white">Search coverage on this page</h2>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+            <h2 className="text-xl font-semibold text-slate-950">Search coverage on this page</h2>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
               <p>Search fields cover keyword, city, and state so candidates can mix role intent with local discovery.</p>
               <p>Filters cover salary, experience, education, job type, work mode, industry, skills, posted date, verified, featured, remote, and fresher.</p>
               {hasActiveJobs ? (
                 <p>
                   Sorting supports latest, salary high to low, deadline soon, and featured first across{" "}
-                  <span className="font-semibold text-white">{total}</span> filtered active jobs.
+                  <span className="font-semibold text-slate-950">{total}</span> filtered active jobs.
                 </p>
               ) : (
                 <p>This page will show coverage details after the first active jobs are published.</p>

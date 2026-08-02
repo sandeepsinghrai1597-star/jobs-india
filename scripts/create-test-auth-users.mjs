@@ -1,121 +1,81 @@
-import { createClient } from "@supabase/supabase-js";
-import fs from "node:fs";
-import path from "node:path";
+/**
+ * Creates (or resets) the demo candidate and employer accounts in MySQL.
+ *
+ *   npm run create:test-users
+ */
 
-const projectRoot = process.cwd();
-const envPath = path.join(projectRoot, ".env");
+import bcrypt from "bcryptjs";
+import { connect, createDb, loadEnvFiles, randomUUID } from "./lib/mysql-client.mjs";
 
-if (fs.existsSync(envPath)) {
-  const envText = fs.readFileSync(envPath, "utf8");
-  for (const rawLine of envText.split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const eqIndex = line.indexOf("=");
-    if (eqIndex === -1) continue;
-    const key = line.slice(0, eqIndex).trim();
-    const value = line.slice(eqIndex + 1).trim();
-    if (!(key in process.env)) {
-      process.env[key] = value;
-    }
-  }
-}
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !serviceRoleKey) {
-  console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.");
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, serviceRoleKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-});
+loadEnvFiles();
 
 const testUsers = [
   {
     email: "candidate.demo@jobpulse.test",
     password: "JobPulse123",
-    user_metadata: {
-      full_name: "Demo Candidate",
-      phone: "+91 9876543210",
-      role: "candidate",
-    },
+    name: "Demo Candidate",
+    phone: "+91 9876543210",
+    role: "candidate",
   },
   {
     email: "employer.demo@jobpulse.test",
     password: "JobPulse123",
-    user_metadata: {
-      full_name: "Demo Employer",
-      phone: "+91 9876543211",
-      role: "employer",
-    },
+    name: "Demo Employer",
+    phone: "+91 9876543211",
+    role: "employer",
   },
 ];
 
-async function createOrUpdateUser(user) {
-  const existing = await supabase.auth.admin.listUsers({
-    page: 1,
-    perPage: 1000,
-  });
+async function createOrUpdateUser(db, user) {
+  const { data: existing, error: lookupError } = await db
+    .from("users")
+    .select("id")
+    .eq("email", user.email)
+    .maybeSingle();
 
-  if (existing.error) {
-    throw existing.error;
+  if (lookupError) throw new Error(lookupError.message);
+
+  const passwordHash = await bcrypt.hash(user.password, 10);
+  const fields = {
+    name: user.name,
+    phone: user.phone,
+    role: user.role,
+    password_hash: passwordHash,
+    email_verified: true,
+    is_banned: false,
+    app_metadata: { role: user.role },
+  };
+
+  if (existing) {
+    const { error } = await db.from("users").update(fields).eq("id", existing.id);
+    if (error) throw new Error(error.message);
+    return { action: "updated", email: user.email, id: existing.id };
   }
 
-  const match = existing.data.users.find((entry) => entry.email === user.email);
-
-  if (!match) {
-    const created = await supabase.auth.admin.createUser({
-      email: user.email,
-      password: user.password,
-      email_confirm: true,
-      user_metadata: user.user_metadata,
-      app_metadata: {
-        role: user.user_metadata.role,
-      },
-    });
-
-    if (created.error) {
-      throw created.error;
-    }
-
-    return { action: "created", email: user.email };
-  }
-
-  const updated = await supabase.auth.admin.updateUserById(match.id, {
-    password: user.password,
-    email_confirm: true,
-    user_metadata: user.user_metadata,
-    app_metadata: {
-      ...(match.app_metadata ?? {}),
-      role: user.user_metadata.role,
-    },
-  });
-
-  if (updated.error) {
-    throw updated.error;
-  }
-
-  return { action: "updated", email: user.email };
+  const id = randomUUID();
+  const { error } = await db.from("users").insert({ id, email: user.email, ...fields });
+  if (error) throw new Error(error.message);
+  return { action: "created", email: user.email, id };
 }
 
 async function main() {
-  for (const user of testUsers) {
-    const result = await createOrUpdateUser(user);
-    console.log(`${result.action}: ${result.email}`);
-  }
+  const connection = await connect();
+  const db = createDb(connection);
 
-  console.log("");
-  console.log("Candidate login:");
-  console.log("  email: candidate.demo@jobpulse.test");
-  console.log("  password: JobPulse123");
-  console.log("Employer login:");
-  console.log("  email: employer.demo@jobpulse.test");
-  console.log("  password: JobPulse123");
+  try {
+    for (const user of testUsers) {
+      const result = await createOrUpdateUser(db, user);
+      console.log(`${result.action}: ${result.email}`);
+    }
+
+    console.log("");
+    console.log("Test logins (password: JobPulse123)");
+    for (const user of testUsers) {
+      console.log(`  ${user.role.padEnd(9)} ${user.email}`);
+    }
+  } finally {
+    await connection.end();
+  }
 }
 
 main().catch((error) => {

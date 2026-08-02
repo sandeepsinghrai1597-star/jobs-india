@@ -12,8 +12,7 @@ type UserFixture = {
 
 type Fixtures = {
   baseUrl: string;
-  supabaseUrl: string;
-  publishableKey: string;
+  database?: string;
   users: Record<string, UserFixture>;
 };
 

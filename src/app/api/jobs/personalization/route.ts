@@ -3,6 +3,7 @@ import { getCachedOrComputeJobMatches } from "@/lib/candidate/job-match";
 import { mapCandidateProfileRow } from "@/lib/candidate/profile";
 import { getUnifiedJobs } from "@/lib/jobs/live";
 import { createClient } from "@/lib/supabase/server";
+import type { DbRow } from "@/lib/db/mysql";
 
 const candidateProfileSelect =
   "id, user_id, full_name, phone, headline, bio, education, skills, experience, city, state, preferred_roles, expected_salary, preferred_job_types, language_preference, resume_url, verified, verification_status, verification_requested_at, verified_at, updated_at";
@@ -52,8 +53,8 @@ export async function GET(req: Request) {
       : Promise.resolve({ data: [], error: null }),
   ]);
 
-  const savedIds = new Set((savedResult.data ?? []).map((row) => row.job_id));
-  const appliedIds = new Set((appliedResult.data ?? []).map((row) => row.job_id));
+  const savedIds = new Set((savedResult.data ?? []).map((row: DbRow) => row.job_id));
+  const appliedIds = new Set((appliedResult.data ?? []).map((row: DbRow) => row.job_id));
   const stateByJobId = Object.fromEntries(
     jobIds.map((jobId) => [
       jobId,
@@ -81,7 +82,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     isSignedIn: true,
     stateByJobId,
-    resumeOptions: (resumesResult.data ?? []).map((resume) => ({
+    resumeOptions: (resumesResult.data ?? []).map((resume: DbRow) => ({
       id: resume.id,
       title: resume.title,
       updatedAt: resume.updated_at,

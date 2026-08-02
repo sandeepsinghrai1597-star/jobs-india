@@ -47,7 +47,8 @@ export default async function PricingPage() {
   const paymentsEnabled = Boolean(
     process.env.RAZORPAY_KEY_ID &&
       process.env.RAZORPAY_KEY_SECRET &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      process.env.MYSQL_HOST &&
+      process.env.MYSQL_DATABASE,
   );
 
   return (
@@ -80,12 +81,12 @@ export default async function PricingPage() {
       </div>
 
       <section className="mt-16">
-        <h2 className="text-2xl font-semibold text-white">Frequently asked questions</h2>
+        <h2 className="text-2xl font-semibold text-slate-950">Frequently asked questions</h2>
         <div className="mt-6 space-y-4">
           {pricingFaq.map((item) => (
-            <div key={item.q} className="rounded-[1.5rem] border border-white/8 bg-white/4 p-5">
-              <p className="font-semibold text-white">{item.q}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-400">{item.a}</p>
+            <div key={item.q} className="rounded-[1.5rem] border border-slate-100 bg-white p-5">
+              <p className="font-semibold text-slate-950">{item.q}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{item.a}</p>
             </div>
           ))}
         </div>

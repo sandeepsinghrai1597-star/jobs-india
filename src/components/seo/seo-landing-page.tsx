@@ -60,27 +60,27 @@ export function SeoLandingPage({
 
       <BreadcrumbsNav items={breadcrumbItems} />
 
-      <section className="rounded-[2rem] bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-900 px-6 py-10 text-white shadow-2xl shadow-slate-300/20 md:px-10">
+      <section className="rounded-[2rem] bg-gradient-to-br from-slate-100 via-slate-50 to-cyan-900 px-6 py-10 text-white shadow-2xl shadow-slate-300/20 md:px-10">
         <div className="space-y-5">
-          <Badge className="w-fit rounded-full bg-white/10 px-4 py-1 text-white hover:bg-white/10">
+          <Badge className="w-fit rounded-full bg-slate-100 px-4 py-1 text-slate-950 hover:bg-slate-100">
             SEO Landing Page
           </Badge>
           <div className="space-y-4">
             <h1 className="font-heading text-4xl font-semibold tracking-tight md:text-5xl">
               {page.h1}
             </h1>
-            <p className="max-w-4xl text-lg leading-8 text-slate-200">{page.intro}</p>
+            <p className="max-w-4xl text-lg leading-8 text-slate-800">{page.intro}</p>
           </div>
-          <div className="flex flex-wrap gap-3 text-sm text-slate-200">
-            <span className="rounded-full border border-white/10 px-4 py-2">
+          <div className="flex flex-wrap gap-3 text-sm text-slate-800">
+            <span className="rounded-full border border-slate-200 px-4 py-2">
               {jobs.length} live job matches
             </span>
             {governmentJobListings.length > 0 && (
-              <span className="rounded-full border border-white/10 px-4 py-2">
+              <span className="rounded-full border border-slate-200 px-4 py-2">
                 {governmentJobListings.length} government listings
               </span>
             )}
-            <span className="rounded-full border border-white/10 px-4 py-2">
+            <span className="rounded-full border border-slate-200 px-4 py-2">
               Updated daily
             </span>
           </div>
@@ -89,8 +89,8 @@ export function SeoLandingPage({
 
       <section className="space-y-4">
         <div className="space-y-2">
-          <h2 className="font-heading text-2xl font-semibold text-white">Active Job Listings</h2>
-          <p className="text-sm leading-6 text-slate-400">
+          <h2 className="font-heading text-2xl font-semibold text-slate-950">Active Job Listings</h2>
+          <p className="text-sm leading-6 text-slate-500">
             Listings are filtered and updated automatically based on this page&apos;s search intent.
           </p>
         </div>
@@ -104,25 +104,25 @@ export function SeoLandingPage({
       {governmentJobListings.length ? (
         <section className="space-y-4">
           <div className="space-y-2">
-            <h2 className="font-heading text-2xl font-semibold text-white">Related Government Listings</h2>
-            <p className="text-sm leading-6 text-slate-400">
+            <h2 className="font-heading text-2xl font-semibold text-slate-950">Related Government Listings</h2>
+            <p className="text-sm leading-6 text-slate-500">
               Official public-sector and government recruitment opportunities related to this search.
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {governmentJobListings.map((job) => (
-              <Card key={job.slug} className="rounded-[1.75rem] border-white/8 bg-white/4 shadow-sm">
+              <Card key={job.slug} className="rounded-[1.75rem] border-slate-100 bg-white shadow-sm">
                 <CardContent className="space-y-3 p-6">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                       {job.department}
                     </p>
-                    <h3 className="text-xl font-semibold text-white">{job.title}</h3>
+                    <h3 className="text-xl font-semibold text-slate-950">{job.title}</h3>
                   </div>
-                  <p className="text-sm leading-6 text-slate-400">{job.summary}</p>
-                  <div className="flex flex-wrap gap-2 text-xs text-slate-400">
-                    <span className="rounded-full bg-white/8 px-3 py-1">{job.state}</span>
-                    <span className="rounded-full bg-white/8 px-3 py-1">Last date: {job.lastDate}</span>
+                  <p className="text-sm leading-6 text-slate-500">{job.summary}</p>
+                  <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+                    <span className="rounded-full bg-white px-3 py-1">{job.state}</span>
+                    <span className="rounded-full bg-white px-3 py-1">Last date: {job.lastDate}</span>
                   </div>
                   <Link
                     href={`/government-jobs/${job.slug}`}

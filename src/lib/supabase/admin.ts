@@ -1,24 +1,38 @@
 import "server-only";
-import { createClient } from "@supabase/supabase-js";
+import { createMysqlDataClient, getMysqlPool, type MysqlQueryBuilder } from "@/lib/db/mysql";
+import { createAuthAdminApi } from "@/lib/db/auth";
 
-let adminClient: ReturnType<typeof createClient> | null = null;
+/**
+ * Privileged data client (formerly the Supabase service-role client), now
+ * backed by Hostinger MySQL. Callers must keep handling `null`, which
+ * signals that database env vars are missing.
+ *
+ * Safe outside a request scope (cron jobs, scripts) — unlike the
+ * cookie-bound server client, this reads no request state.
+ */
 
-export function getSupabaseAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+export interface AdminDataClient {
+  from(table: string): MysqlQueryBuilder;
+  auth: { admin: ReturnType<typeof createAuthAdminApi> };
+}
 
-  if (!url || !serviceRoleKey) {
+let adminClient: AdminDataClient | null = null;
+
+export function getSupabaseAdminClient(): AdminDataClient | null {
+  if (!getMysqlPool()) {
     return null;
   }
 
   if (!adminClient) {
-    adminClient = createClient(url, serviceRoleKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    });
+    const data = createMysqlDataClient();
+    adminClient = {
+      from: (table: string) => data.from(table),
+      auth: { admin: createAuthAdminApi() },
+    };
   }
 
   return adminClient;
 }
+
+/** Alias for new code that shouldn't reference the old vendor name. */
+export const getAdminDataClient = getSupabaseAdminClient;

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { recordAnalyticsEvent } from "@/lib/analytics/server";
 import { createClient } from "@/lib/supabase/server";
 import { resumeBuilderSchema } from "@/lib/resume/schema";
+import type { DbRow } from "@/lib/db/mysql";
 
 async function getResumeSummaries(userId: string) {
   const supabase = await createClient();
@@ -15,7 +16,7 @@ async function getResumeSummaries(userId: string) {
     throw error;
   }
 
-  return (data ?? []).map((item) => ({
+  return (data ?? []).map((item: DbRow) => ({
     id: item.id,
     title: item.title,
     templateKey: item.template_key ?? "fresher",

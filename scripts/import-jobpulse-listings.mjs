@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { connect, createDb, randomUUID } from "./lib/mysql-client.mjs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -906,9 +906,11 @@ async function getSourceId(supabase) {
     return existing.id;
   }
 
-  const { data, error } = await supabase
+  const sourceId = randomUUID();
+  const { error } = await supabase
     .from("job_sources")
     .insert({
+      id: sourceId,
       name: "JobPulse.in WordPress Import",
       source_type: "partner",
       transport_type: "html",
@@ -924,15 +926,13 @@ async function getSourceId(supabase) {
         defaultState: "Haryana",
         fetchFrequencyMinutes: 1440,
       },
-    })
-    .select("id")
-    .maybeSingle();
+    });
 
-  if (error || !data?.id) {
-    throw new Error(error?.message ?? "Unable to create job source row for JobPulse.in");
+  if (error) {
+    throw new Error(error.message ?? "Unable to create job source row for JobPulse.in");
   }
 
-  return data.id;
+  return sourceId;
 }
 
 function toJobpulseImportRow(row) {
@@ -1035,16 +1035,8 @@ async function main() {
   const tableIndex = process.argv.indexOf("--table");
   const targetTable = tableIndex >= 0 ? process.argv[tableIndex + 1] : DEFAULT_DB_TABLE;
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("Missing Supabase environment variables.");
-  }
-
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false },
-  });
+  const connection = await connect();
+  const supabase = createDb(connection);
 
   const [categoriesById, posts] = await Promise.all([fetchCategories(), loadAllJobpulsePosts()]);
   const sourceId = !exportJsonPath && targetTable === "government_jobs" ? await getSourceId(supabase) : null;
@@ -1096,7 +1088,10 @@ async function main() {
   console.log(`Imported ${parsedJobs.length} JobPulse.in listings into ${targetTable}.`);
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+main()
+  .catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  })
+  // Without this the open MySQL connection keeps the process alive.
+  .finally(() => process.exit(process.exitCode ?? 0));

@@ -35,11 +35,11 @@ const footerColumns = [
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-white/8 bg-[rgba(9,8,18,0.96)]">
+    <footer className="border-t border-slate-100 bg-[rgba(9,8,18,0.96)]">
       <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[1.25fr_repeat(3,1fr)] lg:px-8">
         <div className="space-y-4">
-          <p className="font-heading text-2xl font-semibold text-white">{siteConfig.name}</p>
-          <p className="max-w-sm text-sm leading-7 text-slate-300">
+          <p className="font-heading text-2xl font-semibold text-slate-950">{siteConfig.name}</p>
+          <p className="max-w-sm text-sm leading-7 text-slate-600">
             A mobile-first career platform for India with job discovery, resumes, interview prep,
             and AI-guided decision support.
           </p>
@@ -50,10 +50,10 @@ export function SiteFooter() {
 
         {footerColumns.map((column) => (
           <div key={column.title} className="space-y-4">
-            <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-100">
+            <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-800">
               {column.title}
             </h4>
-            <ul className="space-y-3 text-sm text-slate-400">
+            <ul className="space-y-3 text-sm text-slate-500">
               {column.links.map((link) => (
                 <li key={link.href}>
                   <Link href={link.href} className="transition hover:text-primary">
@@ -66,8 +66,8 @@ export function SiteFooter() {
         ))}
       </div>
 
-      <div className="border-t border-white/8">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 text-sm text-slate-400 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+      <div className="border-t border-slate-100">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 text-sm text-slate-500 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <p>&copy; 2026 {siteConfig.name}. All rights reserved.</p>
           <div className="flex flex-wrap gap-4">
             <Link href="/learning-roadmap" className="hover:text-cyan-300">

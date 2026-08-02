@@ -54,7 +54,7 @@ export function ForgotPasswordForm() {
           Email Address
         </label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 pointer-events-none" />
           <input
             id="email"
             type="email"
@@ -90,7 +90,7 @@ export function ForgotPasswordForm() {
       >
         {isSubmitting ? (
           <span className="flex items-center justify-center gap-2">
-            <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+            <div className="h-4 w-4 rounded-full border-2 border-slate-200 border-t-transparent animate-spin" />
             Sending reset link...
           </span>
         ) : (

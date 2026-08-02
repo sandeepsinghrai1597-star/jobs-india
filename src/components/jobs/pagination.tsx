@@ -18,7 +18,7 @@ export default function Pagination({ total, page, perPage }: { total: number; pa
         params.set("page", String(p));
         const href = `/jobs?${params.toString()}`;
         return (
-          <Link key={p} href={href} className={`px-3 py-1 rounded-full ${p === page ? "bg-white/5" : "bg-transparent"}`}>
+          <Link key={p} href={href} className={`px-3 py-1 rounded-full ${p === page ? "bg-white" : "bg-transparent"}`}>
             {p}
           </Link>
         );

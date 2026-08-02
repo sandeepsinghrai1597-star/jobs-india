@@ -228,7 +228,7 @@ export default async function JobDetailPage({
 
         <div className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr]">
           <div className="space-y-8">
-            <div className="space-y-5 rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-sm backdrop-blur">
+            <div className="space-y-5 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm backdrop-blur">
               <div className="flex flex-wrap gap-2">
                 <Badge className="rounded-full">{job.jobType}</Badge>
                 <Badge variant="outline" className="rounded-full capitalize">
@@ -238,7 +238,7 @@ export default async function JobDetailPage({
                   {job.experienceRequired}
                 </Badge>
                 {trustProfile?.verifiedEmployer ? <Badge className="rounded-full bg-emerald-600 text-white">Verified employer</Badge> : null}
-                {trustProfile?.adminVerified ? <Badge className="rounded-full bg-sky-600 text-white">Admin verified</Badge> : null}
+                {trustProfile?.adminVerified ? <Badge className="rounded-full bg-sky-600 text-slate-950">Admin verified</Badge> : null}
                 {job.officialVerified ? (
                   <Badge className="rounded-full bg-indigo-600 text-white">
                     <BadgeCheck className="size-3.5" />
@@ -248,7 +248,7 @@ export default async function JobDetailPage({
               </div>
 
               <div className="space-y-3">
-                <h1 className="font-heading text-4xl font-semibold tracking-tight text-slate-50">{job.title}</h1>
+                <h1 className="font-heading text-4xl font-semibold tracking-tight text-slate-900">{job.title}</h1>
                 <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
                   <p className="flex items-center gap-2">
                     <Building2 className="size-4" />
@@ -298,7 +298,7 @@ export default async function JobDetailPage({
               />
             </div>
 
-            <Card className="rounded-[2rem] border-white/10 bg-white/5 backdrop-blur">
+            <Card className="rounded-[2rem] border-slate-200 bg-white backdrop-blur">
               <CardContent className="space-y-8 p-8">
                 <section className="space-y-3">
                   <h2 className="font-heading text-2xl font-semibold">AI match explanation</h2>
@@ -408,7 +408,7 @@ export default async function JobDetailPage({
           </div>
 
           <div className="space-y-6">
-            <Card className="rounded-[2rem] border-white/10 bg-white/5 backdrop-blur">
+            <Card className="rounded-[2rem] border-slate-200 bg-white backdrop-blur">
               <CardContent className="space-y-4 p-6">
                 <div className="flex items-center gap-3">
                   <ShieldCheck className="size-5 text-emerald-600" />
@@ -462,9 +462,9 @@ export default async function JobDetailPage({
               </CardContent>
             </Card>
 
-            <Card className="rounded-[2rem] border-white/10 bg-white/5 backdrop-blur">
+            <Card className="rounded-[2rem] border-slate-200 bg-white backdrop-blur">
               <CardContent className="space-y-3 p-6 text-sm leading-6 text-muted-foreground">
-                <h2 className="font-semibold text-slate-50">Trust and safety policies</h2>
+                <h2 className="font-semibold text-slate-900">Trust and safety policies</h2>
                 <p>No payment-demand jobs.</p>
                 <p>No misleading salary or false urgency claims.</p>
                 <p>No fake government jobs without official verification.</p>

@@ -87,8 +87,6 @@ export async function syncExpiredJobs(input?: {
       error: null,
       count: null,
       status: 200,
-      statusText: "OK",
-      success: true,
     };
   }
 
