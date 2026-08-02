@@ -437,7 +437,6 @@ export async function approveFetchedJobAction(formData: FormData) {
       no_candidate_payment: true,
       salary_disclosed: Boolean((item.salary_min ?? 0) > 0 || (item.salary_max ?? 0) > 0),
       government_source_verified: item.source_type === "official",
-      verified: item.source_type === "official",
       is_verified: item.source_type === "official",
       application_url: item.application_url ?? item.source_url,
       deadline: item.deadline ?? null,

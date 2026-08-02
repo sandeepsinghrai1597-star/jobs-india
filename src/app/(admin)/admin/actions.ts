@@ -470,7 +470,6 @@ async function insertAdminManagedJob(
       no_candidate_payment: input.noCandidatePayment,
       salary_disclosed: input.salaryDisclosed,
       government_source_verified: input.governmentSourceVerified,
-      verified: input.verified,
       is_verified: input.verified,
       is_featured: input.featured,
       application_url: input.applicationUrl || null,
@@ -595,7 +594,6 @@ async function updateAdminManagedJob(
       no_candidate_payment: input.noCandidatePayment,
       salary_disclosed: input.salaryDisclosed,
       government_source_verified: input.governmentSourceVerified,
-      verified: input.verified,
       is_verified: input.verified,
       is_featured: input.featured,
       application_url: input.applicationUrl || null,
@@ -1282,7 +1280,6 @@ export async function markJobVerifiedAction(formData: FormData) {
     await client
       .from("jobs")
       .update({
-        verified: true,
         is_verified: true,
       } as never)
       .eq("id", jobId);

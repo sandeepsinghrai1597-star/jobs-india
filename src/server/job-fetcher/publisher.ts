@@ -188,7 +188,6 @@ export async function autoPublishNormalizedJob(input: {
       no_candidate_payment: true,
       salary_disclosed: Boolean((input.job.salary_min ?? 0) > 0 || (input.job.salary_max ?? 0) > 0),
       government_source_verified: isGovernment,
-      verified: isGovernment,
       is_verified: isGovernment,
       application_url: input.job.apply_url ?? input.job.source_url,
       deadline: input.job.deadline ?? null,
