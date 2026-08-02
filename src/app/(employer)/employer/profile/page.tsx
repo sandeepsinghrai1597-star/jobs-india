@@ -1,6 +1,7 @@
 import { DashboardShell } from "@/components/dashboards/dashboard-shell";
 import { EmployerProfileForm } from "@/components/employer/employer-profile-form";
 import { createClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth/redirects";
 import { buildMetadata } from "@/lib/seo";
 
 const profileSelect = `
@@ -31,10 +32,11 @@ export const metadata = buildMetadata({
 });
 
 export default async function EmployerProfilePage() {
+  // This page renders the employer onboarding form and reads employer_profiles,
+  // so it must be gated like the rest of /employer — it was previously served
+  // to signed-out visitors with an empty form.
+  const user = await requireRole(["employer", "admin"]);
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   let profile = {
     companyName: "",

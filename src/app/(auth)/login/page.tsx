@@ -41,7 +41,7 @@ export default async function LoginPage({
   return (
     <AuthShell
       title="Login to JobPulse India"
-      description="Secure Supabase Auth login for candidates, employers, and admins."
+      description="Secure login for candidates, employers, and admins."
     >
       <LoginForm
         initialError={authError}

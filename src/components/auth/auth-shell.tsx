@@ -40,7 +40,10 @@ export function AuthShell({
         <div className="jp-panel px-6 py-7 sm:px-8 sm:py-8">
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
-              <p className="font-heading text-2xl font-semibold text-primary jp-neon-text">{title}</p>
+              {/* The page title is the h1 — these pages previously had no
+                  heading element at all, leaving them without a document
+                  outline for screen readers and search engines. */}
+              <h1 className="font-heading text-2xl font-semibold text-primary jp-neon-text">{title}</h1>
               <span className="text-xs uppercase tracking-[0.24em] text-slate-500">Secure Access</span>
             </div>
             <p className="text-sm leading-7 text-slate-600">{description}</p>
