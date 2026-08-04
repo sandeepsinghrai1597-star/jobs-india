@@ -11,7 +11,7 @@ export function PersonalizedJobCardList({
   jobs: Job[];
   showMatches?: boolean;
 }) {
-  const { isSignedIn, matchSummaries, stateByJobId } = useJobPersonalization();
+  const { isLoading, isSignedIn, matchSummaries, stateBySlug } = useJobPersonalization();
 
   return (
     <div className="grid gap-5">
@@ -20,9 +20,10 @@ export function PersonalizedJobCardList({
           key={job.id}
           job={job}
           matchSummary={showMatches ? matchSummaries[job.id] ?? null : null}
-          isSaved={stateByJobId[job.id]?.isSaved ?? false}
-          isApplied={stateByJobId[job.id]?.isApplied ?? false}
+          isSaved={stateBySlug[job.slug]?.isSaved ?? false}
+          isApplied={stateBySlug[job.slug]?.isApplied ?? false}
           isSignedIn={isSignedIn}
+          isSessionPending={isLoading}
         />
       ))}
     </div>

@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { PUBLIC_JOBS_CACHE_TAG } from "@/lib/jobs/live";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/redirects";
 import {
@@ -138,6 +139,7 @@ function revalidateJobSurfaces(slug?: string | null) {
   revalidatePath("/admin");
   revalidatePath("/admin/jobs/review");
   revalidatePath("/jobs");
+  updateTag(PUBLIC_JOBS_CACHE_TAG);
   revalidatePath("/sitemap.xml");
   if (slug) {
     revalidatePath(`/jobs/${slug}`);

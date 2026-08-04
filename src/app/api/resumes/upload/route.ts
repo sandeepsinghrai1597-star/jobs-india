@@ -74,6 +74,9 @@ export async function POST(request: Request) {
     .insert({
       user_id: user.id,
       title,
+      // An uploaded file has no builder document, but content_json is NOT NULL.
+      // Send it explicitly so the insert does not depend on the column default.
+      content_json: {},
       storage_path: filePath,
       template_key: "uploaded",
     } as never)

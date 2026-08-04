@@ -23,56 +23,79 @@ interface JobInteractionState {
 
 interface JobPersonalizationValue {
   isLoading: boolean;
+  /**
+   * True only when the personalization fetch actually answered. On timeout or
+   * error isSignedIn stays false for everyone, so consumers must not read that
+   * as "signed out" — a slow response would otherwise send a signed-in user to
+   * /login and silently drop their action.
+   */
+  isSessionKnown: boolean;
   isSignedIn: boolean;
   matchSummaries: Record<string, JobMatchSummary>;
   resumeOptions: ResumeOption[];
-  stateByJobId: Record<string, JobInteractionState>;
+  /**
+   * Keyed by job slug, not id. Saved/applied rows reference `jobs.id`, which a
+   * government or imported listing does not carry — slug is the identifier the
+   * listing, the save route, and the apply route all agree on.
+   */
+  stateBySlug: Record<string, JobInteractionState>;
+}
+
+export interface PersonalizationJobRef {
+  id: string;
+  slug: string;
 }
 
 const JobPersonalizationContext = createContext<JobPersonalizationValue | null>(null);
 
 export function JobPersonalizationProvider({
   children,
-  jobIds,
+  jobs,
   includeMatches = false,
   includeResumes = false,
 }: {
   children: ReactNode;
-  jobIds: string[];
+  jobs: PersonalizationJobRef[];
   includeMatches?: boolean;
   includeResumes?: boolean;
 }) {
-  const uniqueJobIds = useMemo(
-    () => [...new Set(jobIds.filter(Boolean))],
-    [jobIds],
-  );
+  const uniqueJobs = useMemo(() => {
+    const bySlug = new Map<string, PersonalizationJobRef>();
+    for (const job of jobs) {
+      if (job?.slug) bySlug.set(job.slug, job);
+    }
+    return [...bySlug.values()];
+  }, [jobs]);
   const emptyValue = useMemo<JobPersonalizationValue>(() => ({
     isLoading: false,
+    isSessionKnown: false,
     isSignedIn: false,
     matchSummaries: {},
     resumeOptions: [],
-    stateByJobId: {},
+    stateBySlug: {},
   }), []);
   const [loadedValue, setLoadedValue] = useState<JobPersonalizationValue>(() => ({
     isLoading: true,
+    isSessionKnown: false,
     isSignedIn: false,
     matchSummaries: {},
     resumeOptions: [],
-    stateByJobId: Object.fromEntries(
-      uniqueJobIds.map((jobId) => [jobId, { isApplied: false, isSaved: false }]),
+    stateBySlug: Object.fromEntries(
+      uniqueJobs.map((job) => [job.slug, { isApplied: false, isSaved: false }]),
     ),
   }));
 
   useEffect(() => {
-    if (uniqueJobIds.length === 0) {
+    if (uniqueJobs.length === 0) {
       return;
     }
 
     const controller = new AbortController();
     const params = new URLSearchParams();
 
-    for (const jobId of uniqueJobIds) {
-      params.append("ids", jobId);
+    for (const job of uniqueJobs) {
+      params.append("slugs", job.slug);
+      if (job.id) params.append("ids", job.id);
     }
 
     if (includeMatches) {
@@ -83,8 +106,14 @@ export function JobPersonalizationProvider({
       params.set("includeResumes", "true");
     }
 
+    // Distinguishes "we gave up waiting" from "the provider unmounted". Only
+    // the former should clear isLoading — consumers disable save/apply while
+    // it is true, so a stuck flag would leave those buttons dead forever.
+    let didTimeOut = false;
+
     async function loadPersonalization() {
       const timeout = window.setTimeout(() => {
+        didTimeOut = true;
         controller.abort();
       }, 3000);
 
@@ -101,17 +130,18 @@ export function JobPersonalizationProvider({
         const result = (await response.json()) as JobPersonalizationValue;
         setLoadedValue({
           isLoading: false,
+          isSessionKnown: true,
           isSignedIn: result.isSignedIn,
           matchSummaries: result.matchSummaries ?? {},
           resumeOptions: result.resumeOptions ?? [],
-          stateByJobId:
-            result.stateByJobId ??
+          stateBySlug:
+            result.stateBySlug ??
             Object.fromEntries(
-              uniqueJobIds.map((jobId) => [jobId, { isApplied: false, isSaved: false }]),
+              uniqueJobs.map((job) => [job.slug, { isApplied: false, isSaved: false }]),
             ),
         });
       } catch (error) {
-        if ((error as Error).name === "AbortError") {
+        if ((error as Error).name === "AbortError" && !didTimeOut) {
           return;
         }
 
@@ -127,12 +157,9 @@ export function JobPersonalizationProvider({
     void loadPersonalization();
 
     return () => controller.abort();
-  }, [includeMatches, includeResumes, uniqueJobIds]);
+  }, [includeMatches, includeResumes, uniqueJobs]);
 
-  const value =
-    uniqueJobIds.length === 0
-      ? emptyValue
-      : loadedValue;
+  const value = uniqueJobs.length === 0 ? emptyValue : loadedValue;
 
   return (
     <JobPersonalizationContext.Provider value={value}>

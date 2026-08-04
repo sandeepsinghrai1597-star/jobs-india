@@ -203,7 +203,7 @@ export default async function JobDetailPage({
 
   return (
     <JobPersonalizationProvider
-      jobIds={[job.id, ...similarJobs.map((item) => item.id)]}
+      jobs={[job, ...similarJobs].map((item) => ({ id: item.id, slug: item.slug }))}
       includeMatches
       includeResumes
     >
@@ -290,7 +290,6 @@ export default async function JobDetailPage({
               </div>
 
               <PersonalizedJobActions
-                jobId={job.id}
                 jobSlug={job.slug}
                 applicationUrl={job.applicationUrl}
                 whatsappShareUrl={whatsappShareUrl}

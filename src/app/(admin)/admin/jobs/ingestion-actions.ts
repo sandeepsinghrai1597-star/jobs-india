@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { PUBLIC_JOBS_CACHE_TAG } from "@/lib/jobs/live";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/redirects";
 import { assertAllowedJobSourceUrl, syncJobSource, type JobSourceRow } from "@/lib/jobs/ingestion";
@@ -474,6 +475,7 @@ export async function approveFetchedJobAction(formData: FormData) {
   revalidatePath("/admin/jobs/fetched");
   revalidatePath("/admin/jobs/review");
   revalidatePath("/jobs");
+  updateTag(PUBLIC_JOBS_CACHE_TAG);
   revalidatePath(`/jobs/${job.slug}`);
   redirect(returnTo);
 }
@@ -498,6 +500,7 @@ export async function approveNormalizedJobAction(formData: FormData) {
   revalidatePath("/admin/jobs/fetched");
   revalidatePath("/admin/jobs/review");
   revalidatePath("/jobs");
+  updateTag(PUBLIC_JOBS_CACHE_TAG);
   redirect(returnTo);
 }
 

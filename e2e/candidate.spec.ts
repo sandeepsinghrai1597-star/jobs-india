@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import {
   firstPublicJob,
   fillCandidateOnboarding,
@@ -33,10 +33,17 @@ test.describe("Candidate flows", () => {
 
     const publicJob = await firstPublicJob(page);
     await page.goto("/jobs");
-    // Job cards start with isSignedIn=false and learn the real session from a
-    // client-side personalization fetch. Clicking before that settles routes to
-    // /login, which bounces an authenticated user to their dashboard.
-    await page.waitForLoadState("networkidle");
+    // Read the title from the same render that we click, rather than reusing
+    // publicJob: /jobs ordering shifts as other specs publish listings, so the
+    // top card here is not necessarily the one firstPublicJob() saw. Both
+    // locators resolve against this single load, so they agree.
+    const savedJobTitle = (
+      await page.locator('a[href^="/jobs/"]').filter({ hasText: /.+/ }).first().textContent()
+    )?.trim();
+    expect(savedJobTitle).toBeTruthy();
+    // Save/apply controls stay disabled until the client-side personalization
+    // fetch reports the real session, so Playwright's actionability wait is
+    // enough here — no networkidle hack needed.
     // Compact save buttons set an aria-label ("Save job" / "Unsave job") which
     // overrides the visible "Save" / "Saved" text for accessible-name matching.
     await page.getByRole("button", { name: /^save job$/i }).first().click();
@@ -44,14 +51,41 @@ test.describe("Candidate flows", () => {
 
     await page.goto(publicJob.href);
     await page.getByRole("button", { name: /apply now/i }).click();
+
+    // The panel now preselects the newest saved resume, so a re-run against a
+    // database that already holds one would not render the upload field. Ask
+    // for the upload path explicitly to exercise it every time.
+    // The select content portals outside the dialog, so scope the trigger to
+    // the dialog but look up the option at page level.
+    await page.getByRole("dialog").getByRole("combobox").first().click();
+    await page.getByRole("option", { name: /upload new resume/i }).click();
+
     await page.setInputFiles("#resume-upload", "e2e/fixtures/test-resume.pdf");
-    await expect(page.getByText(/resume uploaded/i)).toBeVisible();
-    await page.getByRole("button", { name: /submit application/i }).click();
-    await expect(page.getByText(/application submitted successfully|already applied/i)).toBeVisible();
+    // Match the success copy specifically: the failure alert ("Your resume
+    // uploaded, but we could not save it to your library") also contains
+    // "resume uploaded", so a looser pattern passed while the upload was broken.
+    await expect(page.getByText(/you can submit the application now/i)).toBeVisible();
+
+    // On success the panel hands off to the job's official application URL via
+    // window.location.assign, so the "Application submitted" alert is set and
+    // then torn down by that navigation — it is never observable. Assert on the
+    // API result, and keep the handoff from dragging a third-party site into
+    // the run. The tracker check below confirms the application actually stuck.
+    await blockCrossOriginNavigation(page);
+    const [applyResponse] = await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          /\/api\/jobs\/[^/]+\/apply$/.test(new URL(response.url()).pathname) &&
+          response.request().method() === "POST",
+      ),
+      page.getByRole("button", { name: /submit application/i }).click(),
+    ]);
+    // 409 is the "already applied" path, which is a valid outcome on a re-run.
+    expect([200, 409]).toContain(applyResponse.status());
 
     await page.goto("/dashboard/saved-jobs");
     await expect(page.getByRole("heading", { name: /saved jobs/i })).toBeVisible();
-    await expect(page.getByText(publicJob.title)).toBeVisible();
+    await expect(page.getByText(savedJobTitle!).first()).toBeVisible();
 
     await page.goto("/dashboard/applications");
     await expect(page.getByRole("heading", { name: /applications tracker/i })).toBeVisible();
@@ -66,3 +100,23 @@ test.describe("Candidate flows", () => {
     await expect(page).toHaveURL(/\/dashboard/);
   });
 });
+
+/**
+ * Cancels top-level navigations that leave the app under test, so a handoff to
+ * a third-party "apply on the official site" URL cannot stall or fail the run.
+ * Sub-resource requests are left alone.
+ */
+async function blockCrossOriginNavigation(page: Page) {
+  const appOrigin = new URL(page.url()).origin;
+
+  await page.route("**/*", async (route) => {
+    const request = route.request();
+
+    if (request.isNavigationRequest() && new URL(request.url()).origin !== appOrigin) {
+      await route.abort();
+      return;
+    }
+
+    await route.fallback();
+  });
+}

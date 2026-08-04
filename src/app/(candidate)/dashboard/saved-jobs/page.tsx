@@ -30,7 +30,7 @@ export default async function CandidateSavedJobsPage() {
         .map((job: DbRow) => dbRowToJob(job as unknown as SupabaseJobRow)) ?? [];
   }
 
-  const interactions = await getJobInteractionState(savedJobs.map((job) => job.id));
+  const interactions = await getJobInteractionState(savedJobs);
 
   return (
     <DashboardShell
@@ -44,8 +44,8 @@ export default async function CandidateSavedJobsPage() {
             <JobCard
               key={job.id}
               job={job}
-              isSaved={interactions.stateByJobId.get(job.id)?.isSaved ?? true}
-              isApplied={interactions.stateByJobId.get(job.id)?.isApplied ?? false}
+              isSaved={interactions.stateBySlug.get(job.slug)?.isSaved ?? true}
+              isApplied={interactions.stateBySlug.get(job.slug)?.isApplied ?? false}
               isSignedIn={interactions.isSignedIn}
             />
           ))}

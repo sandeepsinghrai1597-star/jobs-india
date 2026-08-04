@@ -237,12 +237,10 @@ function SectionCard({
 function CompactJobCard({
   job,
   isSaved = false,
-  isSignedIn = false,
   showSaveAction = false,
 }: {
   job: Job;
   isSaved?: boolean;
-  isSignedIn?: boolean;
   showSaveAction?: boolean;
 }) {
   return (
@@ -276,7 +274,6 @@ function CompactJobCard({
             <SaveJobButton
               jobIdentifier={job.slug}
               isInitiallySaved={isSaved}
-              isSignedIn={isSignedIn}
               loginRedirectTo={`/login?next=/jobs/${job.slug}`}
             />
           ) : null}
@@ -368,7 +365,7 @@ export default async function CandidateDashboardPage() {
   const allJobs = await searchUnifiedJobs({});
   const discoveredJobs = getDiscoveredJobsForCandidate(profile, allJobs).slice(0, 3);
   const recommendedJobs = discoveredJobs.length > 0 ? discoveredJobs : allJobs.slice(0, 3);
-  const recommendedInteractions = await getJobInteractionState(recommendedJobs.map((job) => job.id));
+  const recommendedInteractions = await getJobInteractionState(recommendedJobs);
   const completion = calculateProfileCompletion(profile);
   const careerAgentMissingContext = [
     !profile.education ? "education" : "",
@@ -593,8 +590,7 @@ export default async function CandidateDashboardPage() {
                     key={job.id}
                     job={job}
                     showSaveAction
-                    isSaved={recommendedInteractions.stateByJobId.get(job.id)?.isSaved ?? false}
-                    isSignedIn={recommendedInteractions.isSignedIn}
+                    isSaved={recommendedInteractions.stateBySlug.get(job.slug)?.isSaved ?? false}
                   />
                 ))}
               </div>

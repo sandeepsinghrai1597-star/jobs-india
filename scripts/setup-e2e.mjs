@@ -81,6 +81,10 @@ async function ensureUser(db, user) {
     if (error) throw new Error(`Could not create ${user.email}: ${error.message}`);
   }
 
+  if (user.role === "candidate") {
+    await ensureVerifiedCandidateProfile(db, id);
+  }
+
   return {
     id,
     email: user.email,
@@ -88,6 +92,42 @@ async function ensureUser(db, user) {
     role: user.role,
     name: user.name,
   };
+}
+
+/**
+ * POST /api/jobs/[id]/apply rejects unverified candidates with 403, and
+ * `verified` is only ever set by an admin approving a verification request —
+ * PUT /api/candidate/profile deliberately preserves the existing value. So a
+ * candidate driven purely through the UI can never reach the apply flow, and
+ * the spec would fail on a real product gate rather than a defect.
+ *
+ * Pre-verify the fixture candidates instead. The onboarding save carries the
+ * flag through untouched, so this survives fillCandidateOnboarding().
+ */
+async function ensureVerifiedCandidateProfile(db, userId) {
+  const { data: existing, error: lookupError } = await db
+    .from("candidate_profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (lookupError) throw new Error(lookupError.message);
+
+  const verification = { verified: true, verification_status: "verified" };
+
+  if (existing?.id) {
+    const { error } = await db
+      .from("candidate_profiles")
+      .update(verification)
+      .eq("id", existing.id);
+    if (error) throw new Error(`Could not verify candidate profile: ${error.message}`);
+    return;
+  }
+
+  const { error } = await db
+    .from("candidate_profiles")
+    .insert({ id: randomUUID(), user_id: userId, ...verification });
+  if (error) throw new Error(`Could not create candidate profile: ${error.message}`);
 }
 
 async function main() {

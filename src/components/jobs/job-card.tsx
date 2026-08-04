@@ -92,20 +92,28 @@ export function JobCard({
   isSaved = false,
   isApplied = false,
   isSignedIn = false,
+  isSessionPending = false,
 }: {
   job: Job;
   matchSummary?: JobMatchSummary | null;
   isSaved?: boolean;
   isApplied?: boolean;
   isSignedIn?: boolean;
+  /** See SaveJobButton — isSignedIn is not trustworthy until this is false. */
+  isSessionPending?: boolean;
 }) {
   const isImportedGovernmentListing =
     job.sourceType === "official" &&
     Boolean(job.sourceUrl?.includes("jobpulse.in"));
   const detailHref = isImportedGovernmentListing ? `/government-jobs/${job.slug}` : `/jobs/${job.slug}`;
-  const applyHref = isSignedIn
-    ? `${detailHref}?apply=1#job-apply-panel`
-    : `/login?next=${encodeURIComponent(`${detailHref}?apply=1`)}`;
+  // While the session is still unknown isSignedIn is false for everyone, so the
+  // signed-out branch would send an authenticated user to /login — which just
+  // bounces them to their dashboard. Fall back to the detail page until we know.
+  const applyHref = isSessionPending
+    ? detailHref
+    : isSignedIn
+      ? `${detailHref}?apply=1#job-apply-panel`
+      : `/login?next=${encodeURIComponent(`${detailHref}?apply=1`)}`;
 
   return (
     <Card className="rounded-[1.75rem] border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10">
@@ -221,15 +229,23 @@ export function JobCard({
           <SaveJobButton
             jobIdentifier={job.slug}
             isInitiallySaved={isSaved}
-            isSignedIn={isSignedIn}
-            loginRedirectTo={`/login?next=${detailHref}`}
+            isSessionPending={isSessionPending}
+            loginRedirectTo={`/login?next=${encodeURIComponent(detailHref)}`}
             compact
           />
-          <Button asChild className="rounded-full" variant={isApplied ? "outline" : "default"}>
-            <Link href={isImportedGovernmentListing ? detailHref : isApplied ? detailHref : applyHref}>
-              {isImportedGovernmentListing ? "View details" : isApplied ? "View application" : "Apply"}
-            </Link>
-          </Button>
+          {/* The apply target depends on the session, so keep it inert (a plain
+              button, not a link) until personalization settles. */}
+          {isSessionPending && !isImportedGovernmentListing ? (
+            <Button className="rounded-full" variant={isApplied ? "outline" : "default"} disabled>
+              Apply
+            </Button>
+          ) : (
+            <Button asChild className="rounded-full" variant={isApplied ? "outline" : "default"}>
+              <Link href={isImportedGovernmentListing ? detailHref : isApplied ? detailHref : applyHref}>
+                {isImportedGovernmentListing ? "View details" : isApplied ? "View application" : "Apply"}
+              </Link>
+            </Button>
+          )}
         </div>
       </CardFooter>
     </Card>

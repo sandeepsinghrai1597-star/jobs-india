@@ -8,13 +8,18 @@ import { Button } from "@/components/ui/button";
 export function SaveJobButton({
   jobIdentifier,
   isInitiallySaved = false,
-  isSignedIn = false,
+  isSessionPending = false,
   loginRedirectTo = "/login",
   compact = false,
 }: {
   jobIdentifier: string;
   isInitiallySaved?: boolean;
-  isSignedIn?: boolean;
+  /**
+   * True while the client-side personalization fetch is still in flight. Until
+   * it resolves isSignedIn is false for everyone, so acting on a click in that
+   * window would bounce a signed-in user to /login instead of saving.
+   */
+  isSessionPending?: boolean;
   loginRedirectTo?: string;
   compact?: boolean;
 }) {
@@ -25,11 +30,18 @@ export function SaveJobButton({
   const [error, setError] = useState<string | null>(null);
 
   async function handleSave() {
-    if (!isSignedIn) {
-      router.push(loginRedirectTo);
+    if (isSessionPending) {
       return;
     }
 
+    // Deliberately no `!isSignedIn` short-circuit. isSignedIn only reflects a
+    // *successful* personalization fetch: that request aborts after 3s, and on
+    // a slow response the provider settles with isLoading false and isSignedIn
+    // false for a user who is in fact signed in. Redirecting on that would send
+    // them to /login, which bounces them to their dashboard and silently drops
+    // the save. The server is the only reliable authority, and it already
+    // answers 401 with a redirectTo that the error branch below follows — so
+    // let a genuinely signed-out click take that path instead.
     setIsSaving(true);
     setMessage(null);
     setError(null);
@@ -48,8 +60,13 @@ export function SaveJobButton({
       setError(result.message ?? "We could not save this job.");
       setIsSaving(false);
 
-      if (result.redirectTo) {
-        router.push(result.redirectTo);
+      // 401 carries its own redirectTo; loginRedirectTo is the caller-supplied
+      // fallback so a signed-out click still lands on /login with the right next.
+      const signInTarget =
+        result.redirectTo ?? (response.status === 401 ? loginRedirectTo : null);
+
+      if (signInTarget) {
+        router.push(signInTarget);
       }
 
       return;
@@ -79,7 +96,7 @@ export function SaveJobButton({
         variant="outline"
         className="rounded-full"
         onClick={handleSave}
-        disabled={isSaving}
+        disabled={isSaving || isSessionPending}
         aria-label={compact ? (isSaved ? "Unsave job" : "Save job") : undefined}
         title={compact && message ? message : compact && error ? error : undefined}
       >

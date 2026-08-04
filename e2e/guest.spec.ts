@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { firstPublicJob, saveDebugScreenshot, searchJob } from "./utils";
 
 test.describe("Guest journeys", () => {
@@ -26,10 +26,21 @@ test.describe("Guest journeys", () => {
     // The detail page also renders related-job cards, each with its own save
     // button, so target the first match rather than tripping strict mode.
     await page.getByRole("button", { name: /save job/i }).first().click();
-    await expect(page).toHaveURL(/\/login\?next=\/jobs\//);
+    await expectLoginRedirectBackTo(page, job.slug);
 
     await page.goto(job.href);
     await page.getByRole("button", { name: /apply now/i }).first().click();
-    await expect(page).toHaveURL(/\/login\?next=\/jobs\//);
+    await expectLoginRedirectBackTo(page, job.slug);
   });
 });
+
+/**
+ * Both redirects percent-encode the `next` value, so a raw `next=/jobs/...`
+ * regex never matched the apply case. Compare the decoded parameter instead.
+ */
+async function expectLoginRedirectBackTo(page: Page, jobSlug: string) {
+  await page.waitForURL(/\/login(\?|$)/);
+  const next = new URL(page.url()).searchParams.get("next");
+  expect(next).toBeTruthy();
+  expect(next).toContain(`/jobs/${jobSlug}`);
+}

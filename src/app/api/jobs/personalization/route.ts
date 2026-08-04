@@ -8,37 +8,63 @@ import type { DbRow } from "@/lib/db/mysql";
 const candidateProfileSelect =
   "id, user_id, full_name, phone, headline, bio, education, skills, experience, city, state, preferred_roles, expected_salary, preferred_job_types, language_preference, resume_url, verified, verification_status, verification_requested_at, verified_at, updated_at";
 
+function splitParam(values: string[]) {
+  return [
+    ...new Set(
+      values
+        .flatMap((value) => value.split(","))
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const rawIds = url.searchParams.getAll("ids");
   const includeResumes = url.searchParams.get("includeResumes") === "true";
   const includeMatches = url.searchParams.get("includeMatches") === "true";
-  const jobIds = [...new Set(rawIds.flatMap((value) => value.split(",")).map((value) => value.trim()).filter(Boolean))];
+  const jobIds = splitParam(url.searchParams.getAll("ids"));
+  const jobSlugs = splitParam(url.searchParams.getAll("slugs"));
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const defaultStateByJobId = Object.fromEntries(
-    jobIds.map((jobId) => [jobId, { isApplied: false, isSaved: false }]),
+  const defaultStateBySlug = Object.fromEntries(
+    jobSlugs.map((slug) => [slug, { isApplied: false, isSaved: false }]),
   );
 
   if (!user) {
     return NextResponse.json({
       isSignedIn: false,
-      stateByJobId: defaultStateByJobId,
+      stateBySlug: defaultStateBySlug,
       resumeOptions: [],
       matchSummaries: {},
     });
   }
 
+  // Saved/applied rows point at `jobs.id`, but a listing's id is only a jobs.id
+  // when the listing came from that table — government and imported feeds carry
+  // their own ids, and the save/apply routes persist those under a fresh uuid.
+  // Slug is the one identifier both sides agree on, so resolve through it.
+  const { data: persistedRows } =
+    jobSlugs.length > 0
+      ? await supabase.from("jobs").select("id, slug").in("slug", jobSlugs)
+      : { data: [] };
+
+  const slugByPersistedId = new Map<string, string>();
+  for (const row of (persistedRows ?? []) as DbRow[]) {
+    slugByPersistedId.set(String(row.id), String(row.slug));
+  }
+  const persistedIds = [...slugByPersistedId.keys()];
+
   const [savedResult, appliedResult, profileResult, resumesResult] = await Promise.all([
-    jobIds.length > 0
-      ? supabase.from("saved_jobs").select("job_id").eq("user_id", user.id).in("job_id", jobIds)
+    persistedIds.length > 0
+      ? supabase.from("saved_jobs").select("job_id").eq("user_id", user.id).in("job_id", persistedIds)
       : Promise.resolve({ data: [], error: null }),
-    jobIds.length > 0
-      ? supabase.from("applications").select("job_id").eq("user_id", user.id).in("job_id", jobIds)
+    persistedIds.length > 0
+      ? supabase.from("applications").select("job_id").eq("user_id", user.id).in("job_id", persistedIds)
       : Promise.resolve({ data: [], error: null }),
     includeMatches
       ? supabase.from("candidate_profiles").select(candidateProfileSelect).eq("user_id", user.id).maybeSingle()
@@ -53,14 +79,22 @@ export async function GET(req: Request) {
       : Promise.resolve({ data: [], error: null }),
   ]);
 
-  const savedIds = new Set((savedResult.data ?? []).map((row: DbRow) => row.job_id));
-  const appliedIds = new Set((appliedResult.data ?? []).map((row: DbRow) => row.job_id));
-  const stateByJobId = Object.fromEntries(
-    jobIds.map((jobId) => [
-      jobId,
+  const savedSlugs = new Set(
+    (savedResult.data ?? [])
+      .map((row: DbRow) => slugByPersistedId.get(String(row.job_id)))
+      .filter(Boolean),
+  );
+  const appliedSlugs = new Set(
+    (appliedResult.data ?? [])
+      .map((row: DbRow) => slugByPersistedId.get(String(row.job_id)))
+      .filter(Boolean),
+  );
+  const stateBySlug = Object.fromEntries(
+    jobSlugs.map((slug) => [
+      slug,
       {
-        isApplied: appliedIds.has(jobId),
-        isSaved: savedIds.has(jobId),
+        isApplied: appliedSlugs.has(slug),
+        isSaved: savedSlugs.has(slug),
       },
     ]),
   );
@@ -81,7 +115,7 @@ export async function GET(req: Request) {
 
   return NextResponse.json({
     isSignedIn: true,
-    stateByJobId,
+    stateBySlug,
     resumeOptions: (resumesResult.data ?? []).map((resume: DbRow) => ({
       id: resume.id,
       title: resume.title,

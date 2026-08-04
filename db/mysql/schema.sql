@@ -396,7 +396,9 @@ CREATE TABLE IF NOT EXISTS resumes (
   id CHAR(36) NOT NULL PRIMARY KEY,
   user_id CHAR(36) NOT NULL,
   title VARCHAR(255) NOT NULL,
-  content_json JSON NOT NULL,
+  -- Uploaded resumes are just a stored file with no structured body, so this
+  -- needs a default or /api/resumes/upload cannot create the library row.
+  content_json JSON NOT NULL DEFAULT (JSON_OBJECT()),
   file_url VARCHAR(500),
   storage_path VARCHAR(500),
   template_key VARCHAR(64),

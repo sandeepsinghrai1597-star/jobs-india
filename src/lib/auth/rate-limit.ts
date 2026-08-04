@@ -14,6 +14,13 @@ export function enforceAuthRateLimit(
   request: Request,
   options: { key: string; limit: number; windowMs: number },
 ): NextResponse | null {
+  // The e2e suite signs in far more than 10 times a minute from one IP, so
+  // every run past the limit fails on whichever spec happens to be running.
+  // Never set this outside local test runs.
+  if (process.env.AUTH_RATE_LIMIT_DISABLED === "true") {
+    return null;
+  }
+
   const identifier = `${options.key}:${getClientIp(request)}`;
   const now = Date.now();
   const entry = store.get(identifier);

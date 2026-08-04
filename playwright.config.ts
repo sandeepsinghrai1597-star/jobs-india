@@ -26,6 +26,11 @@ export default defineConfig({
   webServer: {
     command: "npm run dev",
     url: "http://localhost:3000",
+    // The suite drives ~20 sign-ins from one IP; the 10/min auth limiter would
+    // otherwise 429 whichever spec runs late. Only takes effect when Playwright
+    // starts the server itself — see login() in e2e/utils.ts for the fallback
+    // that covers `reuseExistingServer` hitting an already-running dev server.
+    env: { AUTH_RATE_LIMIT_DISABLED: "true" },
     reuseExistingServer: true,
     timeout: 180_000,
   },

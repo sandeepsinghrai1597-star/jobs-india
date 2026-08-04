@@ -35,6 +35,8 @@ export function VerifiedApplyPanel({
   jobSlug,
   applicationUrl,
   isSignedIn,
+  isSessionKnown = true,
+  isSessionPending = false,
   isInitiallyApplied = false,
   resumeOptions,
   autoStartApply = false,
@@ -43,6 +45,10 @@ export function VerifiedApplyPanel({
   jobSlug: string;
   applicationUrl: string;
   isSignedIn: boolean;
+  /** See JobPersonalizationValue — false means the fetch never answered. */
+  isSessionKnown?: boolean;
+  /** See SaveJobButton — isSignedIn is not trustworthy until this is false. */
+  isSessionPending?: boolean;
   isInitiallyApplied?: boolean;
   resumeOptions: ResumeOption[];
   autoStartApply?: boolean;
@@ -61,6 +67,19 @@ export function VerifiedApplyPanel({
   const [uploadedResumeLabel, setUploadedResumeLabel] = useState<string>("");
   const [coverLetter, setCoverLetter] = useState("");
   const hasAutoOpenedRef = useRef(false);
+  const hasPickedResumeRef = useRef(false);
+  const newestResumeId = resumeOptions[0]?.id;
+
+  // resumeOptions arrive from the personalization fetch, i.e. after first
+  // render, so the useState initializer above always sees an empty list. Adopt
+  // the newest saved resume once it shows up, unless the user picked already.
+  useEffect(() => {
+    if (hasPickedResumeRef.current || !newestResumeId) {
+      return;
+    }
+
+    setSelectedResumeId((current) => (current === "upload-new" ? newestResumeId : current));
+  }, [newestResumeId]);
 
   const needsUpload = selectedResumeId === "upload-new";
   const loginRedirectTo = `/login?next=${encodeURIComponent(`/jobs/${jobSlug}?apply=1`)}`;
@@ -112,6 +131,7 @@ export function VerifiedApplyPanel({
       return;
     }
 
+    hasPickedResumeRef.current = true;
     setUploadedResumeId(result.resume.id);
     setUploadedResumeLabel(result.resume?.title ?? file.name);
     setSelectedResumeId("upload-new");
@@ -120,7 +140,7 @@ export function VerifiedApplyPanel({
   }
 
   async function handleApply() {
-    if (!isSignedIn) {
+    if (!isSignedIn && isSessionKnown) {
       router.push(loginRedirectTo);
       return;
     }
@@ -176,7 +196,15 @@ export function VerifiedApplyPanel({
 
   return (
     <div className="space-y-3">
-      {!isSignedIn ? (
+      {isSessionPending ? (
+        <Alert>
+          <FileUp className="size-4" />
+          <AlertTitle>Checking your session</AlertTitle>
+          <AlertDescription>
+            One moment while we load your resumes and application status.
+          </AlertDescription>
+        </Alert>
+      ) : !isSignedIn ? (
         <Alert>
           <LockKeyhole className="size-4" />
           <AlertTitle>Sign in required</AlertTitle>
@@ -221,14 +249,21 @@ export function VerifiedApplyPanel({
         <Button
           className="rounded-full"
           onClick={() => {
-            if (!isSignedIn) {
+            if (isSessionPending) {
+              return;
+            }
+
+            // Only a confirmed signed-out visitor is sent to /login. If the
+            // session is merely unknown, open the dialog and let the apply API
+            // answer 401 with its own redirectTo.
+            if (!isSignedIn && isSessionKnown) {
               router.push(loginRedirectTo);
               return;
             }
 
             setOpen(true);
           }}
-          disabled={isApplied}
+          disabled={isApplied || isSessionPending}
         >
           {isApplied ? "Applied" : "Apply now"}
         </Button>
@@ -246,7 +281,13 @@ export function VerifiedApplyPanel({
           <div className="space-y-5 px-6 pb-6">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-900">Resume</label>
-              <Select value={selectedResumeId} onValueChange={setSelectedResumeId}>
+              <Select
+                value={selectedResumeId}
+                onValueChange={(value) => {
+                  hasPickedResumeRef.current = true;
+                  setSelectedResumeId(value);
+                }}
+              >
                 <SelectTrigger className="h-11 w-full rounded-xl bg-white">
                   <SelectValue placeholder="Select a resume" />
                 </SelectTrigger>

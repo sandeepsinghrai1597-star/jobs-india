@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { expect, type Locator, type Page } from "@playwright/test";
+import { expect, type Browser, type Locator, type Page } from "@playwright/test";
 
 type UserFixture = {
   id: string;
@@ -33,14 +33,90 @@ export async function login(page: Page, email: string, password: string) {
   // their role home, so signing in as a second user mid-spec (e.g. right after
   // a signup) would never reach the form.
   await page.context().clearCookies();
-  await page.goto("/login");
-  await expect(page.getByRole("heading", { name: /login to jobpulse india/i })).toBeVisible();
-  await page.getByLabel("Email Address").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: /sign in/i }).click();
-  // Wait for the post-login redirect to land. Without this, a caller that
-  // immediately navigates can race the sign-in and get bounced back to /login.
-  await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30_000 });
+
+  // /api/auth/login rate-limits to 10 attempts per minute per IP. The suite
+  // signs in far more often than that, so a full run used to fail on whichever
+  // spec crossed the threshold. playwright.config.ts disables the limiter for
+  // servers it starts; this retry covers `reuseExistingServer` attaching to a
+  // dev server that was started without the flag.
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    await page.goto("/login");
+    await expect(page.getByRole("heading", { name: /login to jobpulse india/i })).toBeVisible();
+    await page.getByLabel("Email Address").fill(email);
+    await page.getByLabel("Password").fill(password);
+
+    const [response] = await Promise.all([
+      page.waitForResponse(
+        (candidate) =>
+          candidate.url().includes("/api/auth/login") && candidate.request().method() === "POST",
+      ),
+      page.getByRole("button", { name: /sign in/i }).click(),
+    ]);
+
+    if (response.status() === 429) {
+      const retryAfter = Number(response.headers()["retry-after"] ?? "10");
+      await page.waitForTimeout(Math.min(Number.isFinite(retryAfter) ? retryAfter : 10, 65) * 1000 + 500);
+      continue;
+    }
+
+    if (!response.ok()) {
+      throw new Error(`Login failed for ${email}: HTTP ${response.status()} ${await response.text()}`);
+    }
+
+    // Wait for the post-login redirect to land. Without this, a caller that
+    // immediately navigates can race the sign-in and get bounced back to /login.
+    await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30_000 });
+    return;
+  }
+
+  throw new Error(`Login for ${email} kept hitting the auth rate limiter after 3 attempts.`);
+}
+
+/**
+ * Playwright records every response body a traced context sees as a trace
+ * resource. Closing a secondary context can race that write and reject with
+ * "file data stream has unexpected number of bytes", which then leaves a
+ * truncated archive ("End of central directory record signature not found").
+ *
+ * Both are artifact-machinery failures raised during teardown, after the test's
+ * assertions have already run, and they were masking the real results — with
+ * `--trace=off` the same specs fail (or pass) on their actual assertions. Only
+ * these two signatures are swallowed; anything else from close() still throws.
+ *
+ * The trigger scales with response size, so it shows up on the specs that fetch
+ * an employer's whole job list and gets likelier as that table grows across
+ * runs. Purging stale QA jobs in setup:e2e would remove the pressure.
+ */
+const TRACE_ARTIFACT_TEARDOWN_ERRORS = [
+  "file data stream has unexpected number of bytes",
+  "End of central directory record signature not found",
+];
+
+/**
+ * A second signed-in session in its own browser context.
+ *
+ * Specs previously used `browser.newPage()` and closed only the page, leaking
+ * the context. Always close via the returned handle.
+ */
+export async function createSignedInSession(browser: Browser, email: string, password: string) {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await login(page, email, password);
+
+  return {
+    page,
+    close: async () => {
+      try {
+        await context.close();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (!TRACE_ARTIFACT_TEARDOWN_ERRORS.some((known) => message.includes(known))) {
+          throw error;
+        }
+        console.warn(`Ignoring Playwright trace teardown error for ${email}: ${message}`);
+      }
+    },
+  };
 }
 
 export async function logout(page: Page) {
@@ -108,8 +184,20 @@ export async function createEmployerJob(page: Page, title: string) {
   await page.getByLabel("Salary min").fill("600000");
   await page.getByLabel("Salary max").fill("850000");
   await page.getByLabel("Application URL optional").fill("https://example.com/employer-apply");
-  await page.getByRole("button", { name: /create job post/i }).click();
-  await expect(page).toHaveURL(/\/employer\/jobs/);
+  // Wait for the create call itself. The old assertion was toHaveURL(
+  // /\/employer\/jobs/), which the form's own page (/employer/jobs/new) already
+  // satisfies — so it resolved instantly and callers raced ahead of the POST,
+  // then failed to find the "newly created" job in the list.
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (candidate) =>
+        candidate.url().includes("/api/employer/jobs") &&
+        candidate.request().method() === "POST",
+    ),
+    page.getByRole("button", { name: /create job post/i }).click(),
+  ]);
+  expect(response.ok()).toBeTruthy();
+  await expect(page).toHaveURL(/\/employer\/jobs(?!\/new)/);
 }
 
 export async function createAdminJob(page: Page, title: string, companyName: string) {

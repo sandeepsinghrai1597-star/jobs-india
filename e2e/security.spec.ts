@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { createJobAndGetId, fillCandidateOnboarding, fillEmployerOnboarding, getFixtures, login } from "./utils";
+import {
+  createJobAndGetId,
+  createSignedInSession,
+  fillCandidateOnboarding,
+  fillEmployerOnboarding,
+  getFixtures,
+  login,
+} from "./utils";
 
 test.describe("Security boundaries", () => {
   // The database is no longer reachable from the browser, so profile
@@ -7,24 +14,37 @@ test.describe("Security boundaries", () => {
   test("candidate profile API only ever returns the signed-in candidate", async ({ browser }) => {
     const fixtures = getFixtures();
 
-    const altPage = await browser.newPage();
-    await login(altPage, fixtures.users.candidateAlt.email, fixtures.users.candidateAlt.password);
-    await fillCandidateOnboarding(altPage);
-    const { profile: altProfile } = await (await altPage.request.fetch("/api/candidate/profile")).json();
-    await altPage.close();
+    const alt = await createSignedInSession(
+      browser,
+      fixtures.users.candidateAlt.email,
+      fixtures.users.candidateAlt.password,
+    );
+    let altProfile: { userId?: string };
+    try {
+      await fillCandidateOnboarding(alt.page);
+      ({ profile: altProfile } = await (await alt.page.request.fetch("/api/candidate/profile")).json());
+    } finally {
+      await alt.close();
+    }
 
-    const page = await browser.newPage();
-    await login(page, fixtures.users.candidate.email, fixtures.users.candidate.password);
-    await fillCandidateOnboarding(page);
+    const primary = await createSignedInSession(
+      browser,
+      fixtures.users.candidate.email,
+      fixtures.users.candidate.password,
+    );
+    try {
+      await fillCandidateOnboarding(primary.page);
 
-    const response = await page.request.fetch("/api/candidate/profile");
-    expect(response.status()).toBe(200);
-    const { profile } = await response.json();
+      const response = await primary.page.request.fetch("/api/candidate/profile");
+      expect(response.status()).toBe(200);
+      const { profile } = await response.json();
 
-    // Same endpoint, different session — it must not return the other user's row.
-    expect(altProfile.userId).toBeTruthy();
-    expect(profile.userId).not.toBe(altProfile.userId);
-    await page.close();
+      // Same endpoint, different session — it must not return the other user's row.
+      expect(altProfile.userId).toBeTruthy();
+      expect(profile.userId).not.toBe(altProfile.userId);
+    } finally {
+      await primary.close();
+    }
   });
 
   test("candidate profile API rejects unauthenticated requests", async ({ request }) => {
@@ -32,19 +52,23 @@ test.describe("Security boundaries", () => {
     expect(response.status()).toBe(401);
   });
 
-  test("employer cannot mutate another employer's job", async ({ page }) => {
+  test("employer cannot mutate another employer's job", async ({ browser, page }) => {
     const fixtures = getFixtures();
-    const altEmployerPage = await page.context().browser()?.newPage();
-    if (!altEmployerPage) {
-      throw new Error("Could not create alternate employer page.");
-    }
-    await login(altEmployerPage, fixtures.users.employerAlt.email, fixtures.users.employerAlt.password);
-    await fillEmployerOnboarding(altEmployerPage);
-    const altJobId = await createJobAndGetId(
-      altEmployerPage,
-      `QA Security Alt Employer Role ${Date.now()}`,
+    const altEmployer = await createSignedInSession(
+      browser,
+      fixtures.users.employerAlt.email,
+      fixtures.users.employerAlt.password,
     );
-    await altEmployerPage.close();
+    let altJobId: string;
+    try {
+      await fillEmployerOnboarding(altEmployer.page);
+      altJobId = await createJobAndGetId(
+        altEmployer.page,
+        `QA Security Alt Employer Role ${Date.now()}`,
+      );
+    } finally {
+      await altEmployer.close();
+    }
 
     await login(page, fixtures.users.employer.email, fixtures.users.employer.password);
     await fillEmployerOnboarding(page);
@@ -67,17 +91,29 @@ test.describe("Security boundaries", () => {
     await expect(page).toHaveURL(/\/login/);
 
     const fixtures = getFixtures();
-    const candidatePage = await browser.newPage();
-    await login(candidatePage, fixtures.users.candidate.email, fixtures.users.candidate.password);
-    await fillCandidateOnboarding(candidatePage);
-    await candidatePage.goto("/admin");
-    await expect(candidatePage).toHaveURL(/\/dashboard/);
-    await candidatePage.close();
+    const candidate = await createSignedInSession(
+      browser,
+      fixtures.users.candidate.email,
+      fixtures.users.candidate.password,
+    );
+    try {
+      await fillCandidateOnboarding(candidate.page);
+      await candidate.page.goto("/admin");
+      await expect(candidate.page).toHaveURL(/\/dashboard/);
+    } finally {
+      await candidate.close();
+    }
 
-    const employerPage = await browser.newPage();
-    await login(employerPage, fixtures.users.employer.email, fixtures.users.employer.password);
-    await employerPage.goto("/admin");
-    await expect(employerPage).toHaveURL(/\/employer/);
-    await employerPage.close();
+    const employer = await createSignedInSession(
+      browser,
+      fixtures.users.employer.email,
+      fixtures.users.employer.password,
+    );
+    try {
+      await employer.page.goto("/admin");
+      await expect(employer.page).toHaveURL(/\/employer/);
+    } finally {
+      await employer.close();
+    }
   });
 });

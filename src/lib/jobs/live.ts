@@ -9,6 +9,14 @@ import type { DbRow } from "@/lib/db/mysql";
 const NCS_HOME_URL = "https://www.ncs.gov.in/";
 export const PUBLIC_JOBS_REVALIDATE_SECONDS = 300;
 
+/**
+ * Cache tag for the unified public job list. Anything that changes whether a
+ * job is publicly visible (approval, rejection, expiry, ingestion) must call
+ * `revalidateTag(PUBLIC_JOBS_CACHE_TAG)`, or save/apply will keep resolving
+ * against the stale list and 404 on jobs the listing already shows.
+ */
+export const PUBLIC_JOBS_CACHE_TAG = "public-unified-jobs";
+
 
 function extractSalaryBounds(value: string | undefined) {
   if (!value) {
@@ -709,7 +717,14 @@ const loadUnifiedJobs = unstable_cache(async () => {
     console.error("Failed to load unified jobs", error);
     return (await getApprovedGovernmentJobs()).map(governmentJobToPublicJob);
   }
-}, ["public-unified-jobs"], { revalidate: PUBLIC_JOBS_REVALIDATE_SECONDS });
+}, ["public-unified-jobs"], {
+  revalidate: PUBLIC_JOBS_REVALIDATE_SECONDS,
+  // revalidatePath() does not reach an unstable_cache entry — only a matching
+  // tag does. Without this, approving a job left save/apply resolving against a
+  // stale list for up to PUBLIC_JOBS_REVALIDATE_SECONDS: the listing showed the
+  // job while POST /api/jobs/<slug>/save and /apply both answered 404.
+  tags: [PUBLIC_JOBS_CACHE_TAG],
+});
 
 export const getUnifiedJobs = cache(async () => loadUnifiedJobs());
 

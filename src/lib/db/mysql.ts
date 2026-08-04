@@ -78,6 +78,14 @@ export function getMysqlPool(): Pool | null {
     // Hostinger shared MySQL caps concurrent connections per user; keep the
     // serverless pool tiny so parallel invocations don't exhaust the limit.
     connectionLimit: Number(process.env.MYSQL_POOL_LIMIT ?? 3),
+    // Hostinger closes idle connections server-side. Without these the pool
+    // keeps handing out sockets the server has already dropped, and the next
+    // query fails with "read ECONNRESET" — which surfaces as a random 401/500
+    // rather than a connection error. Retire connections before the server
+    // does, and keep the survivors warm.
+    idleTimeout: Number(process.env.MYSQL_IDLE_TIMEOUT_MS ?? 30_000),
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10_000,
     timezone: "Z",
     charset: "utf8mb4",
     dateStrings: false,
@@ -532,12 +540,20 @@ export class MysqlQueryBuilder implements PromiseLike<DbResult> {
   }
 
   private buildSelectColumns(baseColumns: string[]): string {
-    if (baseColumns.length === 0 || baseColumns[0] === "*") {
-      return this.activeEmbeds.length > 0 ? `${BASE_ALIAS}.*` : "*";
-    }
+    const hasEmbeds = this.activeEmbeds.length > 0;
+    const projected: string[] = [];
 
-    const prefix = this.activeEmbeds.length > 0 ? `${BASE_ALIAS}.` : "";
-    const projected = baseColumns.map((column) => `${prefix}${quoteIdent(column)}`);
+    // An embed-only select ("jobs:job_id (id, title)") has no base columns.
+    // Returning early here skipped the embed projection entirely, so the join
+    // ran but none of its columns were selected and reassembleRow produced
+    // `jobs: null` for every row — /dashboard/saved-jobs rendered its empty
+    // state no matter how many rows existed. Fall through to the embed loop.
+    if (baseColumns.length === 0 || baseColumns[0] === "*") {
+      projected.push(hasEmbeds ? `${BASE_ALIAS}.*` : "*");
+    } else {
+      const prefix = hasEmbeds ? `${BASE_ALIAS}.` : "";
+      projected.push(...baseColumns.map((column) => `${prefix}${quoteIdent(column)}`));
+    }
 
     for (const embed of this.activeEmbeds) {
       for (const column of embed.columns) {
@@ -705,6 +721,42 @@ export class MysqlQueryBuilder implements PromiseLike<DbResult> {
         }
 
         await dbPool.query(sql, params);
+
+        // An upsert that hits ON DUPLICATE KEY UPDATE leaves the existing row's
+        // primary key untouched, so echoing back the `id` generated above hands
+        // the caller an id that is not in the table. Callers that chain
+        // .select() then use it as a foreign key and the write fails far away
+        // from the cause — `ensurePersistedJobByIdentifier` returning a phantom
+        // job id broke every application against an already-stored job.
+        // Read the row back by its conflict columns instead.
+        if (this.mode.type === "upsert" && this.returning) {
+          const conflictColumns = (this.mode.onConflict ?? "id").split(",").map((c) => c.trim());
+          const canReadBack = rows.every((row) =>
+            conflictColumns.every((column) => row[column] !== undefined && row[column] !== null),
+          );
+
+          if (canReadBack) {
+            const stored: Record<string, unknown>[] = [];
+            for (const row of rows) {
+              const where = ` WHERE ${conflictColumns.map((c) => `${quoteIdent(c)} = ?`).join(" AND ")}`;
+              const found = await this.selectAffectedRows(
+                dbPool,
+                this.returning,
+                where,
+                conflictColumns.map((column) => serializeValue(row[column])),
+              );
+              if (found[0]) stored.push(found[0]);
+            }
+
+            return {
+              data: this.singleMode || this.maybeSingleMode ? (stored[0] ?? null) : stored,
+              error: null,
+              count: null,
+              status: 201,
+            };
+          }
+        }
+
         const inserted = rows.map((row) => parseRow(this.table, { ...row }));
         return {
           data: this.singleMode || this.maybeSingleMode ? (inserted[0] ?? null) : inserted,

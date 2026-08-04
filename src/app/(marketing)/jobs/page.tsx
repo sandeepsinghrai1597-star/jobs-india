@@ -544,7 +544,9 @@ export default async function JobsPage({
             </Card>
           ) : (
             <div className="space-y-5">
-              <JobPersonalizationProvider jobIds={results.map((job) => job.id)}>
+              <JobPersonalizationProvider
+                jobs={results.map((job) => ({ id: job.id, slug: job.slug }))}
+              >
                 <PersonalizedJobCardList jobs={results} />
               </JobPersonalizationProvider>
 

@@ -8,20 +8,18 @@ import { useJobPersonalization } from "@/components/jobs/job-personalization-con
 import { Share2 } from "lucide-react";
 
 export function PersonalizedJobActions({
-  jobId,
   jobSlug,
   applicationUrl,
   whatsappShareUrl,
   autoStartApply = false,
 }: {
-  jobId: string;
   jobSlug: string;
   applicationUrl: string;
   whatsappShareUrl: string;
   autoStartApply?: boolean;
 }) {
-  const { isLoading, isSignedIn, resumeOptions, stateByJobId } = useJobPersonalization();
-  const interactionState = stateByJobId[jobId];
+  const { isLoading, isSessionKnown, isSignedIn, resumeOptions, stateBySlug } = useJobPersonalization();
+  const interactionState = stateBySlug[jobSlug];
 
   return (
     <>
@@ -31,6 +29,8 @@ export function PersonalizedJobActions({
           jobSlug={jobSlug}
           applicationUrl={applicationUrl}
           isSignedIn={isSignedIn}
+          isSessionKnown={isSessionKnown}
+          isSessionPending={isLoading}
           isInitiallyApplied={interactionState?.isApplied ?? false}
           resumeOptions={resumeOptions}
           autoStartApply={autoStartApply}
@@ -41,8 +41,8 @@ export function PersonalizedJobActions({
         <SaveJobButton
           jobIdentifier={jobSlug}
           isInitiallySaved={interactionState?.isSaved ?? false}
-          isSignedIn={isSignedIn}
-          loginRedirectTo={`/login?next=/jobs/${jobSlug}`}
+          isSessionPending={isLoading}
+          loginRedirectTo={`/login?next=${encodeURIComponent(`/jobs/${jobSlug}`)}`}
         />
         <ReportJobButton jobIdentifier={jobSlug} />
         <Button asChild variant="secondary" className="rounded-full">
