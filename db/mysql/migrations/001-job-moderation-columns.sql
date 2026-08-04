@@ -8,38 +8,44 @@
 -- Safe to re-run: each statement is guarded so an already-migrated database is
 -- left untouched. Apply with:
 --   node scripts/apply-migrations.mjs
+-- or by pasting this file into hPanel -> phpMyAdmin -> SQL.
 --
--- MySQL/MariaDB has no "ADD COLUMN IF NOT EXISTS" that works across both, so
--- each column is added through a prepared statement gated on information_schema.
+-- MySQL 8 has no "ADD COLUMN IF NOT EXISTS" (MariaDB does), so each column is
+-- added through a prepared statement gated on information_schema. Every
+-- statement here is a plain top-level statement terminated by `;` -- no stored
+-- procedure, no BEGIN/END. phpMyAdmin and the mysql CLI split pasted SQL on
+-- semicolons without parsing it, so a compound procedure body gets cut at its
+-- first inner `;` and fails with "#1064 ... near '' at line 13".
 
-DROP PROCEDURE IF EXISTS jp_add_column;
+SET @ddl := IF((SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'jobs' AND column_name = 'reviewed_at') > 0,
+  'SELECT 1', 'ALTER TABLE `jobs` ADD COLUMN `reviewed_at` DATETIME(3) NULL');
+PREPARE jp_stmt FROM @ddl;
+EXECUTE jp_stmt;
+DEALLOCATE PREPARE jp_stmt;
 
-CREATE PROCEDURE jp_add_column(
-  IN target_table VARCHAR(64),
-  IN target_column VARCHAR(64),
-  IN column_definition TEXT
-)
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = DATABASE()
-      AND table_name = target_table
-      AND column_name = target_column
-  ) THEN
-    SET @ddl = CONCAT('ALTER TABLE `', target_table, '` ADD COLUMN `', target_column, '` ', column_definition);
-    PREPARE stmt FROM @ddl;
-    EXECUTE stmt;
-    DEALLOCATE PREPARE stmt;
-  END IF;
-END;
+SET @ddl := IF((SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'jobs' AND column_name = 'reviewed_by') > 0,
+  'SELECT 1', 'ALTER TABLE `jobs` ADD COLUMN `reviewed_by` CHAR(36) NULL');
+PREPARE jp_stmt FROM @ddl;
+EXECUTE jp_stmt;
+DEALLOCATE PREPARE jp_stmt;
 
-CALL jp_add_column('jobs', 'reviewed_at', 'DATETIME(3) NULL');
-CALL jp_add_column('jobs', 'reviewed_by', 'CHAR(36) NULL');
-CALL jp_add_column('jobs', 'rejected_at', 'DATETIME(3) NULL');
-CALL jp_add_column('jobs', 'import_source', 'VARCHAR(64) NULL');
-CALL jp_add_column('jobs', 'import_batch_id', 'CHAR(36) NULL');
+SET @ddl := IF((SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'jobs' AND column_name = 'rejected_at') > 0,
+  'SELECT 1', 'ALTER TABLE `jobs` ADD COLUMN `rejected_at` DATETIME(3) NULL');
+PREPARE jp_stmt FROM @ddl;
+EXECUTE jp_stmt;
+DEALLOCATE PREPARE jp_stmt;
 
-DROP PROCEDURE IF EXISTS jp_add_column;
+SET @ddl := IF((SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'jobs' AND column_name = 'import_source') > 0,
+  'SELECT 1', 'ALTER TABLE `jobs` ADD COLUMN `import_source` VARCHAR(64) NULL');
+PREPARE jp_stmt FROM @ddl;
+EXECUTE jp_stmt;
+DEALLOCATE PREPARE jp_stmt;
+
+SET @ddl := IF((SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'jobs' AND column_name = 'import_batch_id') > 0,
+  'SELECT 1', 'ALTER TABLE `jobs` ADD COLUMN `import_batch_id` CHAR(36) NULL');
+PREPARE jp_stmt FROM @ddl;
+EXECUTE jp_stmt;
+DEALLOCATE PREPARE jp_stmt;
 
 -- `JSON NOT NULL` with no default rejects any INSERT that omits the column.
 -- Admin job creation, the scheduled auto-publish, and the apply flow's bare
